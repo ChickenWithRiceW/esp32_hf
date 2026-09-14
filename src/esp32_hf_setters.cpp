@@ -27,7 +27,7 @@ bool EspHf::setLegacyPin(const char *str) {
 }
 
 
-void EspHf::setIncomingCallCallback(void (*ptr)(esp_bt_gap_cb_param_t *param)) {
+void EspHf::setIncomingCallCallback(void (*ptr)(esp_hf_client_cb_param_t *param)) {
     this->ptr = ptr;
 }
 void EspHf::disableSecurePairing(void) {

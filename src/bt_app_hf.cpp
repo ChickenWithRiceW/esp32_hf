@@ -261,6 +261,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         {
             ESP_LOGI(BT_HF_TAG, "OWN CALLBACK WARAPPER CALLED");
             this->ptr(param);
+            break;
 
         }
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:

@@ -6,7 +6,9 @@
 EspHf& hf = EspHf::getInstance();
 
 void ownFunction(esp_hf_client_cb_param_t *param) {
-  Serial.print("Someone is calling!");
+  Serial.println("Someone is calling!");
+  delay(2000);
+  esp_hf_client_answer_call();
 }
 
 // Example
@@ -16,9 +18,12 @@ void setup() {
 
   // Mandatory setup.
   hf.setDeviceName("ESP-HF TEST");
-  // hf.disableSecurePairing();
   hf.setLegacyPin("4333");
+
+  // // Optional
+  // hf.disableSecurePairing();
   hf.setIncomingCallCallback(ownFunction);
+
   
 
   // Start Hf after setup.

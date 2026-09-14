@@ -80,7 +80,7 @@ class EspHf
     bool setDeviceName(const char *str);
     bool setLegacyPin(const char *str);
     void disableSecurePairing(void);
-    void setIncomingCallCallback(void (*ptr)(esp_bt_gap_cb_param_t *param));
+    void setIncomingCallCallback(void (*ptr)(esp_hf_client_cb_param_t *param));
     
     int begin();
     
