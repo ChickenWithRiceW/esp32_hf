@@ -1,8 +1,6 @@
 #include "esp32_hf.h"
 #define BT_HF_TAG "BT_HF_GAP_SETTER"
 
-
-
 bool EspHf::setDeviceName(const char *str) {
     if (!str || !str[0])
     {
@@ -28,6 +26,10 @@ bool EspHf::setLegacyPin(const char *str) {
     return true;
 }
 
+
+void EspHf::setIncomingCallCallback(void (*ptr)(esp_bt_gap_cb_param_t *param)) {
+    this->ptr = ptr;
+}
 void EspHf::disableSecurePairing(void) {
     this->cfg.bluetooth.ssp_enabled = false;
 }

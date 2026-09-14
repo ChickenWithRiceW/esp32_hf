@@ -5,6 +5,9 @@
 // Create object. Make sure it stays in scope for the full project.
 EspHf& hf = EspHf::getInstance();
 
+void ownFunction(esp_hf_client_cb_param_t *param) {
+  Serial.print("Someone is calling!");
+}
 
 // Example
 void setup() {
@@ -15,6 +18,8 @@ void setup() {
   hf.setDeviceName("ESP-HF TEST");
   // hf.disableSecurePairing();
   hf.setLegacyPin("4333");
+  hf.setIncomingCallCallback(ownFunction);
+  
 
   // Start Hf after setup.
   hf.begin();

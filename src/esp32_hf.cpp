@@ -47,6 +47,11 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
 
 int EspHf::begin(void)
 {
+    if (this->already_run)
+    {
+        ESP_LOGE(TAG, "You already begin the hf, you cannot init it twice");
+        return -1;
+    }
     // Check if things got setup if not throw error.
 
     this->init_controller_and_bluetooth(this->cfg.bluetooth.ssp_enabled);

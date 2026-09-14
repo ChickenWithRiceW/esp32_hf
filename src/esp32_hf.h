@@ -80,6 +80,7 @@ class EspHf
     bool setDeviceName(const char *str);
     bool setLegacyPin(const char *str);
     void disableSecurePairing(void);
+    void setIncomingCallCallback(void (*ptr)(esp_bt_gap_cb_param_t *param));
     
     int begin();
     
@@ -101,5 +102,7 @@ class EspHf
         esp_bd_addr_t peer_addr;
         char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
         uint8_t peer_bdname_len;
+        bool already_run = false;
+        void (*ptr)(esp_hf_client_cb_param_t *param);
 };
 
