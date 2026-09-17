@@ -245,9 +245,6 @@ void EspHf::bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_c
 /* callback for HF_CLIENT */
 void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
-    ESP_LOGI("MY OWN", "%d", 12);
-    ESP_LOGD(BT_HF_TAG, "CB GOT CALLED");
-
     if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
@@ -255,14 +252,12 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
     }
 
     switch (event) {
-
         ESP_LOGI(BT_HF_TAG, "--audio state %s", c_audio_state_str[param->audio_stat.state]);
         case ESP_HF_CLIENT_RING_IND_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "OWN CALLBACK WARAPPER CALLED");
-            this->ptr(param);
+            ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
+            this->ptr();
             break;
-
         }
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
         {
@@ -270,7 +265,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
                     c_connection_state_str[param->conn_stat.state],
                     param->conn_stat.peer_feat,
                     param->conn_stat.chld_feat);
-            memcpy(this->peer_addr,param->conn_stat.remote_bda,ESP_BD_ADDR_LEN);
+            memcpy(this->peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
 
             // ! COMMENTED OUT BECAUSE PBAC DOESNT SEEM TO WORK
             // if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {

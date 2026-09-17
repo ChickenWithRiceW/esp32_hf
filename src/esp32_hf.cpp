@@ -45,27 +45,23 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
     return SUCCESS;
 }
 
-int EspHf::begin(void)
+bool EspHf::begin(void)
 {
-    if (this->already_run)
+    if (this->initialised)
     {
         ESP_LOGE(TAG, "You already begin the hf, you cannot init it twice");
-        return -1;
+        return false;
     }
-    // Check if things got setup if not throw error.
+    this->initialised = true;
 
     this->init_controller_and_bluetooth(this->cfg.bluetooth.ssp_enabled);
 
     this->setup_stacks();
-    // Ignore for now firstly bluetooth init
-    // init_i2s_speaker(8000 * 2);
-
-
 
     #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
         app_gpio_aec_io_cfg();
     #endif
-    return SUCCESS;
+    return true;
 }
 
 void EspHf::setup_stacks(void)

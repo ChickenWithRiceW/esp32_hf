@@ -1,12 +1,13 @@
 // Something something explaination
-
+ 
 #pragma once
+#define ASSERT_INIT if (!this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
+#define ASSERT_NOT_INIT if (this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
 
-// Arduino specific.
+
+// For log overwriting to append to arduino.
 #if ARDUINO
     #include <Arduino.h>
-
-
 #endif
 
 extern "C" {
@@ -57,15 +58,15 @@ struct HfpCarKitConfig
 
     struct Bluetooth
     {
+        // Bluetooth device name of esp. This will be the name you see in the bluetooth menu.
         const char *device_name = nullptr;
+        // Bluetooth pin in cases of old phone or secure paring (ssp) disabled.
         const char* legacy_pairing_pin = nullptr;
-
         // Secured pairing, if disabled fallback to legacy pin paring.
         bool ssp_enabled = true;
 
         // ESP will automatically connect to any host if not defined automatically.
         bool auto_connect_to_host = false;
-        // const char *host_device_name = "AG-Host";
     } bluetooth;
 };
 
@@ -76,13 +77,56 @@ class EspHf
             static EspHf obj;
         return obj;
     }
+
+    /**
+     * @brief Setup bluetooth controller and enable classic bluetooth with defiend settings. DO NOT call without having set device name and legacy pin.
+     * @return True if initializing was successful, false if unsuccessful.
+     */
+    bool begin();
+
+
     // Setters
-    bool setDeviceName(const char *str);
-    bool setLegacyPin(const char *str);
-    void disableSecurePairing(void);
-    void setIncomingCallCallback(void (*ptr)(esp_hf_client_cb_param_t *param));
+
+    /**
+     * @brief Set device name of bluetooth device. Ensure that the string will not be freed at runtime.
+     * @param device_name String representing device name.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool setDeviceName(const char *device_name);
+
+    // ! NO CHECK FOR IT YET
+    /**
+     * @brief Set legacy pin. Legacy pin has a max length of 16 and should only contain numbers and/or letters.
+     * @brief Pin should be at least one character long.
+     * @param legacy_pin String representing of legacy pin.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool setLegacyPin(const char *legacy_pin);
+
+    /**
+     * @brief Disable secure paring (ssp). If disabled legacy pin will be used.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool disableSecurePairing(void);
+
+    // Callback setters.
+
+    /**
+     * @brief Set callback for incoming call event. Do not modify any data from param.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool setCallbackIncomingCall(void (*ptr)(void));
+
+
+    // Actions
+
+    /**
+     * @brief Accept incoming call.
+     * @return Return true regardless of if there is a incoming call present or not. If begin was not called before return false.
+     */
+    bool acceptIncomingCall(void);
     
-    int begin();
+
     
     private:
         EspHf(void);
@@ -103,6 +147,7 @@ class EspHf
         char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
         uint8_t peer_bdname_len;
         bool already_run = false;
-        void (*ptr)(esp_hf_client_cb_param_t *param);
+        bool initialised = false;
+        void (*ptr)(void);
 };
 
