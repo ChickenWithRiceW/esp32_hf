@@ -1,1 +1,8 @@
 - Check if input of devicename and pin is only alphanumeric. (I dont know how much it supports no info yet)
+
+- esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda) Could be used to display connected device name
+
+
+https://github.com/pioarduino/platform-espressif32
+
+platform = https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip#5.5.5
