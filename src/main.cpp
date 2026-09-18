@@ -1,11 +1,10 @@
 #include "esp32_hf.h"
 #include <Arduino.h>
-#include "ESP_I2S.h"
 
 // For speaker example.
-#define SPEAKER_LRC_WS 26
-#define SPEAKER_BCLK 25
-#define SPEAKER_DIN 24
+#define SPEAKER_LRC_WS 25
+#define SPEAKER_DIN 26
+#define SPEAKER_BCLK 5
 #define MSBC 16000 
 
 
@@ -13,26 +12,12 @@
 
 // Create object. Make sure it stays in scope for the full project.
 EspHf& hf = EspHf::getInstance();
-I2SClass I2s;
+I2SClass speaker;
 
 
 void ownFunction(void) {
   Serial.println("Someone is calling!");
   delay(2000);
-}
-
-void speakerTest(void) {
-  // Implement different field for possible gain.
-  I2s.setPins(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
-  I2s.begin(I2S_MODE_STD, MSBC, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO);
-
-  while (true)
-  {
-    uint8_t sample;
-    sample = 100;
-    I2s.write(sample);
-  }
-
 }
 
 // Example
@@ -41,9 +26,14 @@ void setup() {
   Serial.println("Begun.");
   Serial.print("WHAT");
 
+  I2SClass *speaker = hf.setSpeaker(12, 45, 67);
+  speaker.setPins(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
+  speaker.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO);
+
   // Mandatory setup.
   hf.setDeviceName("ESP-HF TEST");
   hf.setLegacyPin("433!");
+  hf.setSpeakerI2s(&speaker);
 
   // // Optional
   // hf.disableSecurePairing();
@@ -56,12 +46,7 @@ void setup() {
 
   hf.begin();
 
-  Serial.print("before sleep");
-
-  sleep(2);
-  Serial.print("after sleep");
-  Serial.print("HUH\n");
-  Serial.print(hf.acceptIncomingCall());
+  // speakerTest();
 }
 
 void loop() {

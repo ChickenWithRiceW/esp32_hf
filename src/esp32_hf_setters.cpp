@@ -29,6 +29,18 @@ bool EspHf::setLegacyPin(const char *str) {
     return true;
 }
 
+bool EspHf::setSpeakerI2s(I2SClass *speaker) {
+    ASSERT_NOT_INIT
+    if (!speaker)
+    {
+        ESP_LOGE(BT_HF_TAG, "Cannot pass in nullpointer.");
+        return false;
+    }
+
+    this->speaker = speaker;
+    return true;
+}
+
 bool EspHf::disableSecurePairing(void) {
     ASSERT_NOT_INIT
     this->cfg.bluetooth.ssp_enabled = false;

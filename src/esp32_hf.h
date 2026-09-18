@@ -35,6 +35,9 @@ extern "C" {
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp32-hal-alloc-bt-classic-mem.h"
+
+#include "ESP_I2S.h"
+
 }
 
 enum esp32_hfp {
@@ -104,10 +107,19 @@ class EspHf
     bool setLegacyPin(const char *legacy_pin);
 
     /**
+     * @brief Set I2s object for speaker. Object must be init with setPin and begin.
+     * @param speaker Pointer to I2sclass object.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool setSpeakerI2s(I2SClass *speaker);
+
+    /**
      * @brief Disable secure paring (ssp). If disabled legacy pin will be used.
      * @return True if action was successful, false if error accrued.
      */
     bool disableSecurePairing(void);
+
+    // Getters
 
     // Callback setters.
 
@@ -132,8 +144,6 @@ class EspHf
      */
     bool rejectIncomingCall(void);
     
-
-    
     private:
         EspHf(void);
         void setup_stacks(void);
@@ -144,6 +154,8 @@ class EspHf
         void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
         static void esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
         void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
+        void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz);
+        static void bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz);
         void gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t *peer_addr, char *peer_bdname, uint8_t *peer_bdname_len);
         
         bool validate_config(void);
@@ -155,5 +167,7 @@ class EspHf
         bool already_run = false;
         bool initialised = false;
         void (*ptr)(void);
+        I2SClass *speaker;
+
 };
 

@@ -197,6 +197,32 @@ static void bt_app_hf_client_audio_close(void)
     m_rb = NULL;
 }
 
+// void speakerTest(void) {
+// //   const float freq = 240.0;
+// //   const int sampleRate = 16000;
+// //   const int amplitude = 3000;
+// //   double phase = 0.0;
+// //   double phaseIncrement = 2.0 * PI * freq / sampleRate;
+
+// //   const int bufSamples = 256;
+// //   uint8_t buf[bufSamples * 2]; // 2 bytes per 16-bit sample
+
+// //   while (true) {
+// //     for (int i = 0; i < bufSamples; i++) {
+// //       int16_t sample = (int16_t)(amplitude * sin(phase));
+// //       buf[i * 2]     = sample & 0xFF;         // low byte
+// //       buf[i * 2 + 1] = (sample >> 8) & 0xFF;  // high byte
+// //       phase += phaseIncrement;
+// //       if (phase > 2.0 * PI) phase -= 2.0 * PI;
+// //     }
+// //     size_t written = EspHf::getInstance().t.write(buf, sizeof(buf));
+// //     if (written != sizeof(buf)) {
+// //       Serial.printf("Short write: %d/%d\n", written, sizeof(buf));
+// //     }
+// //   }
+//   EspHf::getInstance().t.write(buf, sizeof(buf));
+// }
+
 static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
 {
     // if (!m_rb) {
@@ -219,11 +245,22 @@ static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
     return 0;
 }
 
-static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
+void EspHf::bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz) {
+    if (!this->speaker)
+    {
+        ESP_LOGE(BT_HF_TAG, "Speaker object is not set.");
+        return ;
+    }
+    this->speaker->write(buf, sz);
+}
+
+void EspHf::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz)
 {
     if (! m_rb) {
         return;
     }
+    getInstance().bt_app_hf_client_incoming_cb(buf, sz);
+
     // BaseType_t done = xRingbufferSend(m_rb, (uint8_t *)buf, sz, 0);
     // if (! done) {
     //     ESP_LOGE(BT_HF_TAG, "rb send fail");
@@ -282,7 +319,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
+                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper,
                                                     bt_app_hf_client_outgoing_cb);
                 bt_app_hf_client_audio_open();
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
