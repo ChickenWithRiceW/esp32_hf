@@ -1,5 +1,5 @@
 // Something something explaination
- 
+
 #pragma once
 #define ASSERT_INIT if (!this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
 #define ASSERT_NOT_INIT if (this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
@@ -125,6 +125,12 @@ class EspHf
      * @return Return true regardless of if there is a incoming call present or not. If begin was not called before return false.
      */
     bool acceptIncomingCall(void);
+
+    /**
+     * @brief Reject incoming call or outgoing call.
+     * @return Return true regardless of if there is a incoming/outgoing call present or not. If begin was not called before return false.
+     */
+    bool rejectIncomingCall(void);
     
 
     

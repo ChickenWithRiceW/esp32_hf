@@ -67,7 +67,7 @@ bool EspHf::begin(void)
 void EspHf::setup_stacks(void)
 {
     this->setup_bt_gap(this->cfg.bluetooth.device_name, this->cfg.bluetooth.ssp_enabled, this->cfg.bluetooth.legacy_pairing_pin);
- 
+
     esp_hf_client_register_callback(this->bt_app_hf_client_cb_wrapper);
 
     // ? I guess the black magic of what it does to enable it?
