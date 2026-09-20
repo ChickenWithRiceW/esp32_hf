@@ -36,9 +36,17 @@ bool EspHf::setSpeakerI2s(I2SClass *speaker) {
         ESP_LOGE(BT_HF_TAG, "Cannot pass in nullpointer.");
         return false;
     }
-
-    this->speaker = speaker;
+    this->p_speaker = speaker;
     return true;
+}
+
+I2SClass *EspHf::setSpeaker(int8_t bclk, int8_t ws, int8_t dout, int8_t din, int8_t mclk) {
+    this->speaker.setPins(bclk, ws, dout, din, mclk);
+    if (!this->speaker.begin(I2S_MODE_STD, MSBC_BITRATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO)) {
+        ESP_LOGE(BT_HF_TAG, "I2s speaker init failed");
+        return NULL;
+    }
+    return &this->speaker;
 }
 
 bool EspHf::disableSecurePairing(void) {
@@ -53,7 +61,12 @@ bool EspHf::disableSecurePairing(void) {
 
 
 // Callbacks
-bool EspHf::setCallbackIncomingCall(void (*ptr)(void)) {
-    this->ptr = ptr;
+bool EspHf::setCbSimCall(void (*ptr)(void)) {
+    this->cb_sim_card_call = ptr;
+    return true;
+}
+
+bool EspHf::setCbOtherCall(void (*ptr)(void)) {
+    this->cb_other_call = ptr;
     return true;
 }

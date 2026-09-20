@@ -3,6 +3,7 @@
 #pragma once
 #define ASSERT_INIT if (!this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
 #define ASSERT_NOT_INIT if (this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
+#define MSBC_BITRATE 16000
 
 
 // For log overwriting to append to arduino.
@@ -113,6 +114,14 @@ class EspHf
      */
     bool setSpeakerI2s(I2SClass *speaker);
 
+
+    /**
+     * @brief Set i2s speaker internally.
+     * @param
+     * @return Poiner to i2s object or NULL if inizilation failed.
+     */
+    I2SClass *setSpeaker(int8_t bclk, int8_t ws, int8_t dout, int8_t din = (int8_t)(-1), int8_t mclk = (int8_t)(-1));
+
     /**
      * @brief Disable secure paring (ssp). If disabled legacy pin will be used.
      * @return True if action was successful, false if error accrued.
@@ -121,13 +130,25 @@ class EspHf
 
     // Getters
 
+    const char *getBatteryLevel(void);
+
     // Callback setters.
 
     /**
-     * @brief Set callback for incoming call event. Do not modify any data from param.
+     * @brief Set callback for incoming SIM card phone calls. Important! This callback only gets called for SIM card calls not other apps like WhatsApp etc.
+     * 
+     * Callback can be changed at runtime.
      * @return True if action was successful, false if error accrued.
      */
-    bool setCallbackIncomingCall(void (*ptr)(void));
+    bool setCbSimCall(void (*ptr)(void));
+
+    /**
+     * @brief Set callback for incoming phone calls. Important! This callback only gets called for other apps like WhatsApp etc. Not SIM card calls.
+     * 
+     * Callback can be changed at runtime.
+     * @return True if action was successful, false if error accrued.
+     */
+    bool setCbOtherCall(void (*ptr)(void));
 
 
     // Actions
@@ -166,8 +187,14 @@ class EspHf
         uint8_t peer_bdname_len;
         bool already_run = false;
         bool initialised = false;
-        void (*ptr)(void);
-        I2SClass *speaker;
+        I2SClass *p_speaker;
+        I2SClass speaker;
+        esp_hf_client_cb_param_t *cb_client_param;
+        esp_bt_gap_cb_param_t *cb_gap_param;
+        
+        // Callback
+        void (*cb_sim_card_call)(void);
+        void (*cb_other_call)(void);
 
 };
 

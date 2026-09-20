@@ -246,12 +246,12 @@ static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
 }
 
 void EspHf::bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz) {
-    if (!this->speaker)
-    {
-        ESP_LOGE(BT_HF_TAG, "Speaker object is not set.");
-        return ;
-    }
-    this->speaker->write(buf, sz);
+    // if (!this->speaker)
+    // {
+    //     ESP_LOGE(BT_HF_TAG, "Speaker object is not set.");
+    //     return ;
+    // }
+    this->speaker.write(buf, sz);
 }
 
 void EspHf::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz)
@@ -282,6 +282,10 @@ void EspHf::bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_c
 /* callback for HF_CLIENT */
 void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
+    if (param)
+        this->cb_client_param = param;
+
+
     if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
@@ -293,7 +297,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         case ESP_HF_CLIENT_RING_IND_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
-            this->ptr();
+            this->cb_sim_card_call();
             break;
         }
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
@@ -374,6 +378,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CIND_CALL_EVT:
         {
+            this->cb_other_call();
             ESP_LOGI(BT_HF_TAG, "--Call indicator %s",
                     c_call_str[param->call.status]);
             break;

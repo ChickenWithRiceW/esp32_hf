@@ -5,9 +5,6 @@
 #define SPEAKER_LRC_WS 25
 #define SPEAKER_DIN 26
 #define SPEAKER_BCLK 5
-#define MSBC 16000 
-
-
 
 
 // Create object. Make sure it stays in scope for the full project.
@@ -15,9 +12,12 @@ EspHf& hf = EspHf::getInstance();
 I2SClass speaker;
 
 
-void ownFunction(void) {
-  Serial.println("Someone is calling!");
-  delay(2000);
+void cbIncoming(void) {
+  Serial.println("Incoming general!");
+}
+
+void cbRinging(void) {
+  Serial.println(hf.getBatteryLevel());
 }
 
 // Example
@@ -26,18 +26,18 @@ void setup() {
   Serial.println("Begun.");
   Serial.print("WHAT");
 
-  I2SClass *speaker = hf.setSpeaker(12, 45, 67);
-  speaker.setPins(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
-  speaker.begin(I2S_MODE_STD, 16000, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO);
+  // I2SClass *speaker = hf.setSpeaker(12, 45, 67);
 
   // Mandatory setup.
   hf.setDeviceName("ESP-HF TEST");
   hf.setLegacyPin("433!");
-  hf.setSpeakerI2s(&speaker);
+  // hf.setSpeakerI2s(&speaker);
+  hf.setSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
 
   // // Optional
   // hf.disableSecurePairing();
-  hf.setCallbackIncomingCall(ownFunction);
+  hf.setCbOtherCall(cbIncoming);
+  hf.setCbSimCall(cbRinging);
 
 
   // Start Hf after setup.

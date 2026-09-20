@@ -40,6 +40,9 @@ void EspHf::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_par
 
 void EspHf::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
+
+    this->cb_gap_param = param;
+
     switch (event)
     {
         // If nearby Bluetooth devices are discovered.
