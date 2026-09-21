@@ -1,11 +1,17 @@
 #include "esp32_hf.h"
 #define BT_HF_TAG "BT_HF_GAP_SETTER"
 
+// TODO: Check if it can change on runtime.
 bool EspHf::setDeviceName(const char *str) {
     ASSERT_NOT_INIT
     if (!str || !str[0])
     {
         ESP_LOGE(BT_HF_TAG, "Device name can't be nullpointer or empty.");
+        return false;
+    }
+    if (!EspHf::isStrPrintable(str))
+    {
+        ESP_LOGE(BT_HF_TAG, "Device name must only contain printable characters.");
         return false;
     }
 
@@ -24,7 +30,11 @@ bool EspHf::setLegacyPin(const char *str) {
         ESP_LOGE(BT_HF_TAG, "Legacy Pin cannot be bigger then %d", ESP_BT_PIN_CODE_LEN);
         return false;
     }
-    // ! Check if input is alphanumeric
+    if (!EspHf::isStrPrintable(str))
+    {
+        ESP_LOGE(BT_HF_TAG, "Legacy pin must only contain printable characters.");
+        return false;
+    }
     cfg.bluetooth.legacy_pairing_pin = str;
     return true;
 }

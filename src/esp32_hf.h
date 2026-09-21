@@ -12,10 +12,6 @@
 #endif
 
 extern "C" {
-// #include "esp_gap_bt_api.h"    
-// #include "esp_hf_client_api.h"
-// #include "esp_bt_main.h"
-
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -196,5 +192,9 @@ class EspHf
         void (*cb_sim_card_call)(void);
         void (*cb_other_call)(void);
 
+
+        // Misc
+
+        bool isStrPrintable(const char *str);
 };
 

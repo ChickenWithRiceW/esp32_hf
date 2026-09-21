@@ -297,7 +297,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         case ESP_HF_CLIENT_RING_IND_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
-            this->cb_sim_card_call();
+            if (this->cb_sim_card_call)
+                this->cb_sim_card_call();
             break;
         }
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
@@ -378,7 +379,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CIND_CALL_EVT:
         {
-            this->cb_other_call();
+            if (this->cb_other_call) 
+                this->cb_other_call();
             ESP_LOGI(BT_HF_TAG, "--Call indicator %s",
                     c_call_str[param->call.status]);
             break;

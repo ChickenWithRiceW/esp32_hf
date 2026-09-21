@@ -32,17 +32,17 @@ void setup() {
   hf.setDeviceName("ESP-HF TEST");
   hf.setLegacyPin("433!");
   // hf.setSpeakerI2s(&speaker);
-  hf.setSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
+  // hf.setSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
 
   // // Optional
   // hf.disableSecurePairing();
-  hf.setCbOtherCall(cbIncoming);
-  hf.setCbSimCall(cbRinging);
+  // hf.setCbOtherCall(cbIncoming);
+  // hf.setCbSimCall(cbRinging);
 
 
   // Start Hf after setup.
   // Serial.printf("WITHOUT INIT: %d\n", esp_hf_client_answer_call());
-  Serial.print(hf.acceptIncomingCall());
+  // Serial.print(hf.acceptIncomingCall());
 
   hf.begin();
 
@@ -51,5 +51,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  delay(1000);
+  delay(10000);
+
+  // This will most likely not work but I dont know.
+  esp_bt_gap_set_device_name("Changed name without");
 }
