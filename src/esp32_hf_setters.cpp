@@ -1,9 +1,7 @@
 #include "esp32_hf.h"
 #define BT_HF_TAG "BT_HF_GAP_SETTER"
 
-// TODO: Check if it can change on runtime.
 bool EspHf::setDeviceName(const char *str) {
-    ASSERT_NOT_INIT
     if (!str || !str[0])
     {
         ESP_LOGE(BT_HF_TAG, "Device name can't be nullpointer or empty.");
@@ -71,12 +69,7 @@ bool EspHf::disableSecurePairing(void) {
 
 
 // Callbacks
-bool EspHf::setCbSimCall(void (*ptr)(void)) {
-    this->cb_sim_card_call = ptr;
-    return true;
-}
-
-bool EspHf::setCbOtherCall(void (*ptr)(void)) {
-    this->cb_other_call = ptr;
+bool EspHf::setCbIncomingCall(void (*ptr)(const char *phone_number, bool sim_call)) {
+    this->cb_incoming_call = ptr;
     return true;
 }

@@ -12,13 +12,13 @@ EspHf& hf = EspHf::getInstance();
 I2SClass speaker;
 
 
-void cbIncoming(void) {
-  Serial.println("Incoming general!");
+void cbIncoming(const char *phone_number, bool sim_call) {
+  if (sim_call)
+    Serial.printf("Ingoing call from Simcard. Number %s", phone_number);
+  else
+    Serial.printf("Ingoing call from some app. Number %s", phone_number);
 }
 
-void cbRinging(void) {
-  Serial.println(hf.getBatteryLevel());
-}
 
 // Example
 void setup() {
@@ -36,8 +36,7 @@ void setup() {
 
   // // Optional
   // hf.disableSecurePairing();
-  // hf.setCbOtherCall(cbIncoming);
-  // hf.setCbSimCall(cbRinging);
+  hf.setCbIncomingCall(cbIncoming);
 
 
   // Start Hf after setup.

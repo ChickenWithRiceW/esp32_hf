@@ -1,6 +1,9 @@
 #include "esp32_hf.h"
+#undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP_STACK"
 
+
+#include "esp_gap_bt_api.h"
 // extern esp_bd_addr_t peer_addr;
 
 // extern char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
@@ -30,8 +33,6 @@ int EspHf::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* l
     return true;
 }
 
-
-
 void EspHf::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
     getInstance().esp_bt_gap_cb(event, param);
@@ -40,7 +41,6 @@ void EspHf::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_par
 
 void EspHf::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
-
     this->cb_gap_param = param;
 
     switch (event)

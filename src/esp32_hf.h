@@ -89,6 +89,8 @@ class EspHf
 
     /**
      * @brief Set device name of bluetooth device. Ensure that the string will not be freed at runtime.
+     * 
+     * This is runtime changable but will only be visable when the AG Host disconnects from client and reconnects.
      * @param device_name String representing device name.
      * @return True if action was successful, false if error accrued.
      */
@@ -131,20 +133,12 @@ class EspHf
     // Callback setters.
 
     /**
-     * @brief Set callback for incoming SIM card phone calls. Important! This callback only gets called for SIM card calls not other apps like WhatsApp etc.
+     * @brief Set callback for incoming phone calls.
      * 
      * Callback can be changed at runtime.
      * @return True if action was successful, false if error accrued.
      */
-    bool setCbSimCall(void (*ptr)(void));
-
-    /**
-     * @brief Set callback for incoming phone calls. Important! This callback only gets called for other apps like WhatsApp etc. Not SIM card calls.
-     * 
-     * Callback can be changed at runtime.
-     * @return True if action was successful, false if error accrued.
-     */
-    bool setCbOtherCall(void (*ptr)(void));
+    bool setCbIncomingCall(void (*ptr)(const char *phone_number, bool sim_call));
 
 
     // Actions
@@ -189,8 +183,7 @@ class EspHf
         esp_bt_gap_cb_param_t *cb_gap_param;
         
         // Callback
-        void (*cb_sim_card_call)(void);
-        void (*cb_other_call)(void);
+        void (*cb_incoming_call)(const char *phone_number, bool sim_call);
 
 
         // Misc
