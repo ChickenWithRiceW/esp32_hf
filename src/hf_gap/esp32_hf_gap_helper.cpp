@@ -1,5 +1,11 @@
 #include "esp32_hf.h"
+#undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP_HELPER"
+
+
+#include "esp_gap_bt_api.h"
+#include "esp_hf_client_api.h"
+
 
 extern "C"
 {

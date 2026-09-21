@@ -11,7 +11,6 @@
 #include "esp_hf_client_api.h"
 
 
-#define BT_HF_TAG               "BT_HF"
 
 /**
  * @brief     callback function for HF client

@@ -4,6 +4,7 @@
 #define ASSERT_INIT if (!this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
 #define ASSERT_NOT_INIT if (this->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
 #define MSBC_BITRATE 16000
+#define ESP_BT_GAP_MAX_BDNAME_LEN             (248)
 
 
 // For log overwriting to append to arduino.
@@ -11,27 +12,28 @@
     #include <Arduino.h>
 #endif
 
-extern "C" {
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-#include "bt_app_hf.h"
-#include "esp_bt.h"
-#include "esp_bt_device.h"
-#include "esp_bt_main.h"
+extern "C" {
+// #include <inttypes.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <string.h>
+// #include <unistd.h>
+
+// #include "bt_app_hf.h"
+// #include "esp_bt.h"
+// #include "esp_bt_device.h"
+// #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
-#include "esp_log.h"
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-// #include "gpio_pcm_config.h"
-#include "nvs.h"
-#include "nvs_flash.h"
-#include "esp32-hal-alloc-bt-classic-mem.h"
+// #include "esp_log.h"
+// #include "esp_system.h"
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// // #include "gpio_pcm_config.h"
+// #include "nvs.h"
+// #include "nvs_flash.h"
+// #include "esp32-hal-alloc-bt-classic-mem.h"
 
 #include "ESP_I2S.h"
 
@@ -59,7 +61,7 @@ struct HfpCarKitConfig
     struct Bluetooth
     {
         // Bluetooth device name of esp. This will be the name you see in the bluetooth menu.
-        const char *device_name = nullptr;
+        const char *device_name;
         // Bluetooth pin in cases of old phone or secure paring (ssp) disabled.
         const char* legacy_pairing_pin = nullptr;
         // Secured pairing, if disabled fallback to legacy pin paring.
@@ -164,15 +166,13 @@ class EspHf
     private:
         EspHf(void);
         void setup_stacks(void);
-        static void bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
         static int init_controller_and_bluetooth(bool ssp_enabled);
-        
+        static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz);
+        static void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
+        static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
+
+
         static int setup_bt_gap(const char *device_name, bool ssp_enabled, const char* legacy_pairing_pin);
-        void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
-        static void esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
-        void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
-        void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz);
-        static void bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz);
         void gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t *peer_addr, char *peer_bdname, uint8_t *peer_bdname_len);
         
         bool validate_config(void);

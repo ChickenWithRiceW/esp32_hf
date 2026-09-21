@@ -5,7 +5,11 @@
  */
 
 #include "esp32_hf.h"
+#undef BT_HF_TAG
+#define BT_HF_TAG "BT_HF"
 
+
+extern "C" {
 // #include <stdint.h>
 // #include <stdbool.h>
 // #include <stdlib.h>
@@ -13,6 +17,8 @@
 // #include <inttypes.h>
 // #include "esp_log.h"
 
+#include <stdint.h>
+#include "esp_hf_client_api.h"
 // #include "bt_app_hf.h"
 // #include "esp_bt_main.h"
 // #include "esp_bt_device.h"
@@ -20,15 +26,15 @@
 // #include "esp_hf_client_api.h"
 // #include "esp_hf_client_legacy_api.h"
 // #include "esp_pbac_api.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/queue.h"
+// #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 // #include "time.h"
 // #include "sys/time.h"
 // #include "sdkconfig.h"
-
+}
 
 const char *c_hf_evt_str[] = {
     "CONNECTION_STATE_EVT",              /*!< connection state changed event */
@@ -215,12 +221,12 @@ static void bt_app_hf_client_audio_close(void)
 // //       phase += phaseIncrement;
 // //       if (phase > 2.0 * PI) phase -= 2.0 * PI;
 // //     }
-// //     size_t written = EspHf::getInstance().t.write(buf, sizeof(buf));
+// //     size_t written = EspHfBaseBase::getInstance().t.write(buf, sizeof(buf));
 // //     if (written != sizeof(buf)) {
 // //       Serial.printf("Short write: %d/%d\n", written, sizeof(buf));
 // //     }
 // //   }
-//   EspHf::getInstance().t.write(buf, sizeof(buf));
+//   EspHfBaseBase::getInstance().t.write(buf, sizeof(buf));
 // }
 
 static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
@@ -251,39 +257,36 @@ void EspHf::bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz) {
     //     ESP_LOGE(BT_HF_TAG, "Speaker object is not set.");
     //     return ;
     // }
-    this->speaker.write(buf, sz);
+    EspHf s_self = EspHf::getInstance();
+    s_self.speaker.write(buf, sz);
 }
 
-void EspHf::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz)
-{
-    if (! m_rb) {
-        return;
-    }
-    getInstance().bt_app_hf_client_incoming_cb(buf, sz);
+// void EspHf::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz)
+// {
+//     if (! m_rb) {
+//         return;
+//     }
+//     getInstance().bt_app_hf_client_incoming_cb(buf, sz);
 
-    // BaseType_t done = xRingbufferSend(m_rb, (uint8_t *)buf, sz, 0);
-    // if (! done) {
-    //     ESP_LOGE(BT_HF_TAG, "rb send fail");
-    // }
+//     // BaseType_t done = xRingbufferSend(m_rb, (uint8_t *)buf, sz, 0);
+//     // if (! done) {
+//     //     ESP_LOGE(BT_HF_TAG, "rb send fail");
+//     // }
 
-    // write_bs(buf, sz);
+//     // write_bs(buf, sz);
 
-    // esp_hf_client_outgoing_data_ready();
-}
+//     // esp_hf_client_outgoing_data_ready();
+// }
 
 
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 
-
-void EspHf::bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param) {
-    getInstance().bt_app_hf_client_cb(event, param);
-}
-
 /* callback for HF_CLIENT */
 void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
+    EspHf s_self = EspHf::getInstance();
     if (param)
-        this->cb_client_param = param;
+        s_self.cb_client_param = param;
 
 
     if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
@@ -297,21 +300,21 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         case ESP_HF_CLIENT_RING_IND_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
-            if (this->cb_sim_card_call)
-                this->cb_sim_card_call();
+            if (s_self.cb_sim_card_call)
+                s_self.cb_sim_card_call();
             break;
         }
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--connection state %s, peer feats 0x%"PRIx32", chld_feats 0x%"PRIx32,
+            ESP_LOGI( BT_HF_TAG , "--connection state %s, peer feats 0x%" PRIx32 ", chld_feats 0x%" PRIx32 ,
                     c_connection_state_str[param->conn_stat.state],
                     param->conn_stat.peer_feat,
                     param->conn_stat.chld_feat);
-            memcpy(this->peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
+            memcpy(s_self.peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
 
             // ! COMMENTED OUT BECAUSE PBAC DOESNT SEEM TO WORK
             // if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {
-            //     esp_pbac_connect(this->peer_addr);
+            //     esp_pbac_connect(s_self->peer_addr);
             // }
             break;
         }
@@ -324,7 +327,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper,
+                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
                                                     bt_app_hf_client_outgoing_cb);
                 bt_app_hf_client_audio_open();
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
@@ -379,8 +382,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CIND_CALL_EVT:
         {
-            if (this->cb_other_call) 
-                this->cb_other_call();
+            if (s_self.cb_other_call) 
+                s_self.cb_other_call();
             ESP_LOGI(BT_HF_TAG, "--Call indicator %s",
                     c_call_str[param->call.status]);
             break;

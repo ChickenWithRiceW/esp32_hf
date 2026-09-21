@@ -1,6 +1,9 @@
 #include "esp32_hf.h"
+#undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP_STACK"
 
+
+#include "esp_gap_bt_api.h"
 // extern esp_bd_addr_t peer_addr;
 
 // extern char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
@@ -13,7 +16,7 @@ int EspHf::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* l
     esp_bt_gap_set_device_name(device_name);
 
     // Register GAP callback function. (The function that will handle conenction and discovery)
-    esp_bt_gap_register_callback(EspHf::esp_bt_gap_cb_wrapper);
+    esp_bt_gap_register_callback(EspHf::esp_bt_gap_cb);
 
     if (ssp_enabled)
     {
@@ -31,24 +34,17 @@ int EspHf::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* l
 }
 
 
-
-void EspHf::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
-{
-    getInstance().esp_bt_gap_cb(event, param);
-}
-
-
 void EspHf::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
-
-    this->cb_gap_param = param;
+    EspHf s_self = EspHf::getInstance();
+    s_self.cb_gap_param = param;
 
     switch (event)
     {
         // If nearby Bluetooth devices are discovered.
         case ESP_BT_GAP_DISC_RES_EVT:
         {
-            this->gap_helper_device_discovered(param, &this->peer_addr, this->peer_bdname, &this->peer_bdname_len);
+            s_self.gap_helper_device_discovered(param, &s_self.peer_addr, s_self.peer_bdname, &s_self.peer_bdname_len);
             break;
         }
         case ESP_BT_GAP_DISC_STATE_CHANGED_EVT:
@@ -79,17 +75,17 @@ void EspHf::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
             if (param->pin_req.min_16_digit)
             {
                 ESP_LOGI(BT_HF_TAG, "Input pin code: 0000 0000 0000 0000");
-                esp_bt_pin_code_t pin_code = {0};
+                // esp_bt_pin_code_t pin_code = {0};
                 esp_bt_gap_pin_reply(param->pin_req.bda, true, 16, nullptr);
             }
             else
             {
                 ESP_LOGI(BT_HF_TAG, "Input pin code: 1234");
-                esp_bt_pin_code_t pin_code;
-                pin_code[0] = '9';
-                pin_code[1] = '9';
-                pin_code[2] = '9';
-                pin_code[3] = '9';
+                // esp_bt_pin_code_t pin_code;
+                // pin_code[0] = '9';
+                // pin_code[1] = '9';
+                // pin_code[2] = '9';
+                // pin_code[3] = '9';
                 esp_bt_gap_pin_reply(param->pin_req.bda, true, 4, nullptr);
             }
             break;

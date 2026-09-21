@@ -1,21 +1,26 @@
 #include "esp32_hf.h"
+#undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP_SETTER"
+extern "C" {
+#include "esp_gap_bt_api.h"
+#include "ESP_I2S.h"
+}
 
 // TODO: Check if it can change on runtime.
-bool EspHf::setDeviceName(const char *str) {
+bool EspHf::setDeviceName(const char *device_name) {
     ASSERT_NOT_INIT
-    if (!str || !str[0])
+    if (!device_name || !device_name[0])
     {
         ESP_LOGE(BT_HF_TAG, "Device name can't be nullpointer or empty.");
         return false;
     }
-    if (!EspHf::isStrPrintable(str))
+    if (!EspHf::isStrPrintable(device_name))
     {
         ESP_LOGE(BT_HF_TAG, "Device name must only contain printable characters.");
         return false;
     }
 
-    this->cfg.bluetooth.device_name = str;
+    this->cfg.bluetooth.device_name = device_name;
     return true;
 }
 

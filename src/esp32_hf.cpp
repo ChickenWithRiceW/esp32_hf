@@ -1,7 +1,18 @@
 #include "esp32_hf.h"
+static const char *BT_HF_TAG = "HFP";
 
-static const char *TAG = "HFP";
-
+extern "C" {
+// #include "nvs.h"
+#include "nvs_flash.h"
+#include "esp_hf_client_api.h"
+// #include "bt_app_hf.h"
+#include "esp_bt.h"
+// #include "esp_bt_device.h"
+#include "esp_bt_main.h"
+#include "esp_gap_bt_api.h"
+// #include "esp_hf_client_api.h"
+// #include "esp32-hal-log.h"
+}
 
 EspHf::EspHf() {}
 
@@ -47,11 +58,7 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
 
 bool EspHf::begin(void)
 {
-    if (this->initialised)
-    {
-        ESP_LOGE(TAG, "You already begin the hf, you cannot init it twice");
-        return false;
-    }
+    ASSERT_NOT_INIT
     this->initialised = true;
 
     this->init_controller_and_bluetooth(this->cfg.bluetooth.ssp_enabled);
@@ -66,9 +73,11 @@ bool EspHf::begin(void)
 
 void EspHf::setup_stacks(void)
 {
-    this->setup_bt_gap(this->cfg.bluetooth.device_name, this->cfg.bluetooth.ssp_enabled, this->cfg.bluetooth.legacy_pairing_pin);
+    // this->setup_bt_gap(this->cfg.bluetooth.device_name, this->cfg.bluetooth.ssp_enabled, this->cfg.bluetooth.legacy_pairing_pin);
 
-    esp_hf_client_register_callback(this->bt_app_hf_client_cb_wrapper);
+    this->setup_bt_gap("test", this->cfg.bluetooth.ssp_enabled, this->cfg.bluetooth.legacy_pairing_pin);
+
+    esp_hf_client_register_callback(this->bt_app_hf_client_cb);
 
     // ? I guess the black magic of what it does to enable it?
     esp_hf_client_init();
