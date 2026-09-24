@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
 
-#include "esp32_hf.h"
+#include "esp32_hf.hpp"
+#include "freertos/idf_additions.h"
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF"
 
@@ -259,7 +260,7 @@ void EspHf::bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz) {
     //     return ;
     // }
     EspHf s_self = EspHf::getInstance();
-    s_self.speaker.write(buf, sz);
+    s_self._speaker.speaker.write(buf, sz);
 }
 
 void EspHf::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint32_t sz)
@@ -283,15 +284,16 @@ void EspHf::bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_c
     getInstance().bt_app_hf_client_cb(event, param);
 }
 
+// void blocking(void *ptr) {
+//     while (true)
+//         ESP_LOGI("B", "Blocking");
+// }
+
 
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 /* callback for HF_CLIENT */
 void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
-    if (param)
-        this->cb_client_param = param;
-
-
     if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
@@ -305,18 +307,27 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
             ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
             break;
         }
+
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--connection state %s, peer feats 0x%" PRIx32 ", chld_feats 0x%" PRIx32 ,
                     c_connection_state_str[param->conn_stat.state],
                     param->conn_stat.peer_feat,
                     param->conn_stat.chld_feat);
-            memcpy(this->peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
+                    // 0 disconnected
+                    // 2 connected
+            if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _connected) {
+                _connected = false;
+                if (_callbacks.cb_bt_disconnected)
+                    xTaskCreatePinnedToCore(cb_dis_wrap, "dis", 4096, (void *)_callbacks.cb_bt_disconnected, 1, nullptr, 1);
+            }
+            else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_connected) {
+                _connected = true;
+                if (_callbacks.cb_bt_connected)
+                    xTaskCreatePinnedToCore(cb_con_wrap, "con", 4096, (void *)_callbacks.cb_bt_connected, 1, nullptr, 1);
+            }
+            memcpy(this->_peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
 
-            // ! COMMENTED OUT BECAUSE PBAC DOESNT SEEM TO WORK
-            // if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {
-            //     esp_pbac_connect(this->peer_addr);
-            // }
             break;
         }
 
@@ -383,8 +394,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CIND_CALL_EVT:
         {
-            if (this->cb_incoming_call)
-                this->cb_incoming_call("NULL", false);
+            if (_callbacks.cb_incoming_call)
+                _callbacks.cb_incoming_call("NULL", false);
             ESP_LOGI(BT_HF_TAG, "--Call indicator %s",
                     c_call_str[param->call.status]);
             break;
@@ -415,8 +426,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         {
             ESP_LOGI(BT_HF_TAG, "--clip number %s",
                     (param->clip.number == NULL) ? "NULL" : (param->clip.number));
-            if (this->cb_incoming_call)
-                this->cb_incoming_call((param->clip.number == NULL) ? "NULL" : (param->clip.number), true);
+            if (_callbacks.cb_incoming_call)
+                _callbacks.cb_incoming_call((param->clip.number == NULL) ? "NULL" : (param->clip.number), true);
             break;
         }
 

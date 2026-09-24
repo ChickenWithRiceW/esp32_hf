@@ -1,4 +1,4 @@
-#include "esp32_hf.h"
+#include "esp32_hf.hpp"
 
 static const char *TAG = "HFP";
 
@@ -6,14 +6,13 @@ static const char *TAG = "HFP";
 EspHf::EspHf() {}
 
 int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
-    /* Initialize NVS — it is used to store PHY calibration data */
+    // Initialize NVS — it is used to store PHY calibration data
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( ret );
-
+    ESP_ERROR_CHECK(ret);
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -31,8 +30,7 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
     }
 
     esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
-    if (!ssp_enabled)
-        bluedroid_cfg.ssp_en = false;
+    bluedroid_cfg.ssp_en = ssp_enabled;
     if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
         return ret;
@@ -47,14 +45,14 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
 
 bool EspHf::begin(void)
 {
-    if (this->initialised)
+    if (this->_initialised)
     {
         ESP_LOGE(TAG, "You already begin the hf, you cannot init it twice");
         return false;
     }
-    this->initialised = true;
+    this->_initialised = true;
 
-    this->init_controller_and_bluetooth(this->cfg.bluetooth.ssp_enabled);
+    this->init_controller_and_bluetooth(this->_bt.ssp_enabled);
 
     this->setup_stacks();
 
@@ -66,7 +64,7 @@ bool EspHf::begin(void)
 
 void EspHf::setup_stacks(void)
 {
-    this->setup_bt_gap(this->cfg.bluetooth.device_name, this->cfg.bluetooth.ssp_enabled, this->cfg.bluetooth.legacy_pairing_pin);
+    this->setup_bt_gap(this->_bt.device_name, this->_bt.ssp_enabled, this->_bt.legacy_pairing_pin);
 
     esp_hf_client_register_callback(EspHf::bt_app_hf_client_cb_wrapper);
 
@@ -85,10 +83,10 @@ void EspHf::setup_stacks(void)
 }
 
 bool EspHf::validate_config(void) {
-    if (!this->cfg.bluetooth.device_name)
+    if (!this->_bt.device_name)
         return false;
 
-    // if (!this->cfg.bluetooth.legacy_pairing_pin)
+    // if (!this->bt.legacy_pairing_pin)
     //     return false;
     return true;
 }

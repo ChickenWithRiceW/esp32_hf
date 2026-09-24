@@ -1,4 +1,4 @@
-#include "esp32_hf.h"
+#include "esp32_hf.hpp"
 #include <Arduino.h>
 
 // For speaker example.
@@ -20,6 +20,15 @@ void cbIncoming(const char *phone_number, bool sim_call) {
 }
 
 
+void con(void) {
+  Serial.println("Connected");
+}
+
+void dis(void) {
+  Serial.println("Disconnected");
+}
+
+
 // Example
 void setup() {
   Serial.begin(115200);
@@ -30,13 +39,16 @@ void setup() {
 
   // Mandatory setup.
   hf.setDeviceName("ESP-HF TEST");
-  hf.setLegacyPin("433!");
+  hf.setLegacyPin("0123456789123456");
   // hf.setSpeakerI2s(&speaker);
   // hf.setSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
 
   // // Optional
-  // hf.disableSecurePairing();
+  // hf.setSecurePairing(false);
   hf.setCbIncomingCall(cbIncoming);
+  hf.setCbBtConnected(con);
+  hf.setCbBtDisconnected(dis);
+
 
 
   // Start Hf after setup.

@@ -1,4 +1,4 @@
-#include "esp32_hf.h"
+#include "esp32_hf.hpp"
 #define BT_HF_TAG "BT_HF_GAP_HELPER"
 
 extern "C"
@@ -37,27 +37,24 @@ extern "C"
     }
 }
 
-void EspHf::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t *peer_addr, char *peer_bdname, uint8_t *peer_bdname_len) {
+void EspHf::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr, char *peer_bdname, uint8_t *peer_bdname_len) {
     for (int i = 0; i < param->disc_res.num_prop; i++)
     {
         if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR &&
             get_name_from_eir((uint8_t *)param->disc_res.prop[i].val, peer_bdname, peer_bdname_len))
             {
-                //  || (this->peer_bdname, this->cfg.bluetooth.host_device_name) == 0
-                if (true)
-                {
-                    // Copy bluetooth address into peer_addr.
-                    memcpy(peer_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
+                // Copy bluetooth address into peer_addr.
+                memcpy(peer_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
 
-                    ESP_LOGI(BT_HF_TAG, "Found a target device address:");
-                    ESP_LOG_BUFFER_HEX(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
-                    ESP_LOGI(BT_HF_TAG, "Found a target device name: %s", peer_bdname);
+                ESP_LOGI(BT_HF_TAG, "Found a target device address:");
+                ESP_LOG_BUFFER_HEX(BT_HF_TAG, peer_addr, ESP_BD_ADDR_LEN);
+                ESP_LOGI(BT_HF_TAG, "Found a target device name: %s", peer_bdname);
 
-                    esp_hf_client_connect(*peer_addr);
-                    
-                    // Stop discovery.
-                    esp_bt_gap_cancel_discovery();
-                }
+                // Connect to new AG host.
+                esp_hf_client_connect(peer_addr);
+                
+                // Stop discovery.
+                esp_bt_gap_cancel_discovery();
             }
         }
 }

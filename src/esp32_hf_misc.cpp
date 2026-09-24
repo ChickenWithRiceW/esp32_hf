@@ -1,4 +1,4 @@
-#include "esp32_hf.h"
+#include "esp32_hf.hpp"
 
 bool EspHf::isStrPrintable(const char *str) {
 	size_t	i;
