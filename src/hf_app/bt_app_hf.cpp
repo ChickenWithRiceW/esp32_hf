@@ -6,8 +6,11 @@
 
 #include "esp32_hf.hpp"
 #include "freertos/idf_additions.h"
+#include <cstring>
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF"
+// This is the number that gets send by the esp32 internal when you call someone on any other app then over your normal Simcard.
+#define NO_SIMCARD_CALL_NUMBER "10000000"
 
 
 extern "C" {
@@ -38,54 +41,6 @@ extern "C" {
 // #include "sdkconfig.h"
 }
 
-const char *c_hf_evt_str[] = {
-    "CONNECTION_STATE_EVT",              /*!< connection state changed event */
-    "AUDIO_STATE_EVT",                   /*!< audio connection state change event */
-    "VR_STATE_CHANGE_EVT",                /*!< voice recognition state changed */
-    "CALL_IND_EVT",                      /*!< call indication event */
-    "CALL_SETUP_IND_EVT",                /*!< call setup indication event */
-    "CALL_HELD_IND_EVT",                 /*!< call held indicator event */
-    "NETWORK_STATE_EVT",                 /*!< network state change event */
-    "SIGNAL_STRENGTH_IND_EVT",           /*!< signal strength indication event */
-    "ROAMING_STATUS_IND_EVT",            /*!< roaming status indication event */
-    "BATTERY_LEVEL_IND_EVT",             /*!< battery level indication event */
-    "CURRENT_OPERATOR_EVT",              /*!< current operator name event */
-    "RESP_AND_HOLD_EVT",                 /*!< response and hold event */
-    "CLIP_EVT",                          /*!< Calling Line Identification notification event */
-    "CALL_WAITING_EVT",                  /*!< call waiting notification */
-    "CLCC_EVT",                          /*!< listing current calls event */
-    "VOLUME_CONTROL_EVT",                /*!< audio volume control event */
-    "AT_RESPONSE",                       /*!< audio volume control event */
-    "SUBSCRIBER_INFO_EVT",               /*!< subscriber information event */
-    "INBAND_RING_TONE_EVT",              /*!< in-band ring tone settings */
-    "LAST_VOICE_TAG_NUMBER_EVT",         /*!< requested number from AG event */
-    "RING_IND_EVT",                      /*!< ring indication event */
-    "PKT_STAT_EVT",                      /*!< requested number of packet status event */
-    "PROF_STATE_EVT",                    /*!< Indicate HF CLIENT init or deinit complete */
-};
-
-// esp_hf_client_connection_state_t
-const char *c_connection_state_str[] = {
-    "disconnected",
-    "connecting",
-    "connected",
-    "slc_connected",
-    "disconnecting",
-};
-
-// esp_hf_client_audio_state_t
-const char *c_audio_state_str[] = {
-    "disconnected",
-    "connecting",
-    "connected",
-    "connected_msbc",
-};
-
-/// esp_hf_vr_state_t
-const char *c_vr_state_str[] = {
-    "disabled",
-    "enabled",
-};
 
 // esp_hf_service_availability_status_t
 const char *c_service_availability_status_str[] = {
@@ -284,78 +239,89 @@ void EspHf::bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_c
     getInstance().bt_app_hf_client_cb(event, param);
 }
 
-// void blocking(void *ptr) {
-//     while (true)
-//         ESP_LOGI("B", "Blocking");
-// }
+
+void EspHf::connection_change(const esp_hf_client_cb_param_t *param) {
+    // ESP_LOGI(BT_HF_TAG, "--connection state %s, peer feats 0x%" PRIx32 ", chld_feats 0x%" PRIx32 ,
+    //     c_connection_state_str[param->conn_stat.state],
+        // param->conn_stat.peer_feat,
+        // param->conn_stat.chld_feat);
+
+    if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _connected) {
+        _connected = false;
+        if (_callbacks.cb_bt_disconnected)
+            xTaskCreatePinnedToCore(cb_dis_wrap, "dis", 4096, (void *)_callbacks.cb_bt_disconnected, 1, nullptr, 1);
+    }
+    else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_connected) {
+        _connected = true;
+        if (_callbacks.cb_bt_connected)
+            xTaskCreatePinnedToCore(cb_con_wrap, "con", 4096, (void *)_callbacks.cb_bt_connected, 1, nullptr, 1);
+    }
+    memcpy(this->_peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
+}
+
+void EspHf::audio_change(esp_hf_client_cb_param_t *param) {
+    // ESP_LOGI(BT_HF_TAG, "--audio state %s",
+    //     c_audio_state_str[param->audio_stat.state]);
+
+    if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
+        param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
+        esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper,
+                                            bt_app_hf_client_outgoing_cb);
+        bt_app_hf_client_audio_open();
+    } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
+        bt_app_hf_client_audio_close();
+    }
+}
+
+void EspHf::ingoingCall(const char *phone_number, bool is_simcard_call) {
+    t_arg *p_arg;
+
+    _incoming_call = true;
+
+    p_arg = (t_arg *)malloc(sizeof(t_arg));
+
+    p_arg->fn = _callbacks.cb_incoming_call;
+    p_arg->is_simcard_call = is_simcard_call;
+
+    if (!phone_number)
+        p_arg->phone_number[0] = '\0';
+    else
+        strcpy(p_arg->phone_number, phone_number);
+
+    xTaskCreatePinnedToCore(call_wrap, nullptr, 4096, (void *)p_arg, 1, nullptr, 1);
+}
+
+void EspHf::outgoingCall(const char *phone_number, bool is_simcard_call) {
+    t_arg *p_arg;
+
+    _incoming_call = true;
+
+    p_arg = (t_arg *)malloc(sizeof(t_arg));
+
+    p_arg->fn = _callbacks.cb_outgoing_call;
+    p_arg->is_simcard_call = is_simcard_call;
+
+    if (!phone_number)
+        p_arg->phone_number[0] = '\0';
+    else
+        strcpy(p_arg->phone_number, phone_number);
+
+    xTaskCreatePinnedToCore(call_wrap, nullptr, 4096, (void *)p_arg, 1, nullptr, 1);
+}
 
 
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 /* callback for HF_CLIENT */
 void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
-    if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
-        ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
-    } else {
-        ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
-    }
-
     switch (event) {
-        ESP_LOGI(BT_HF_TAG, "--audio state %s", c_audio_state_str[param->audio_stat.state]);
-        case ESP_HF_CLIENT_RING_IND_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "Incoming call callback called");
-            break;
-        }
+        // ESP_LOGI(BT_HF_TAG, "--audio state %s", c_audio_state_str[param->audio_stat.state]);
 
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--connection state %s, peer feats 0x%" PRIx32 ", chld_feats 0x%" PRIx32 ,
-                    c_connection_state_str[param->conn_stat.state],
-                    param->conn_stat.peer_feat,
-                    param->conn_stat.chld_feat);
-                    // 0 disconnected
-                    // 2 connected
-            if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _connected) {
-                _connected = false;
-                if (_callbacks.cb_bt_disconnected)
-                    xTaskCreatePinnedToCore(cb_dis_wrap, "dis", 4096, (void *)_callbacks.cb_bt_disconnected, 1, nullptr, 1);
-            }
-            else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_connected) {
-                _connected = true;
-                if (_callbacks.cb_bt_connected)
-                    xTaskCreatePinnedToCore(cb_con_wrap, "con", 4096, (void *)_callbacks.cb_bt_connected, 1, nullptr, 1);
-            }
-            memcpy(this->_peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
-
-            break;
-        }
+            connection_change(param); break;
 
         case ESP_HF_CLIENT_AUDIO_STATE_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--audio state %s",
-                    c_audio_state_str[param->audio_stat.state]);
-    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
-
-            if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
-                param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper,
-                                                    bt_app_hf_client_outgoing_cb);
-                bt_app_hf_client_audio_open();
-            } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
-                bt_app_hf_client_audio_close();
-            }
-
-    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
-            break;
-        }
-
-        case ESP_HF_CLIENT_BVRA_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--VR state %s",
-                    c_vr_state_str[param->bvra.value]);
-            break;
-        }
+            audio_change(param); break;
 
         case ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT:
         {
@@ -364,12 +330,6 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
             break;
         }
 
-        case ESP_HF_CLIENT_CIND_ROAMING_STATUS_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--ROAMING: %s",
-                    c_roaming_status_str[param->roaming.status]);
-            break;
-        }
 
         case ESP_HF_CLIENT_CIND_SIGNAL_STRENGTH_EVT:
         {
@@ -385,26 +345,28 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
             break;
         }
 
-        case ESP_HF_CLIENT_COPS_CURRENT_OPERATOR_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--operator name: %s",
-                    param->cops.name);
-            break;
-        }
-
+        // Will be called in ingoing and outgoing for other apps.
         case ESP_HF_CLIENT_CIND_CALL_EVT:
         {
-            if (_callbacks.cb_incoming_call)
-                _callbacks.cb_incoming_call("NULL", false);
-            ESP_LOGI(BT_HF_TAG, "--Call indicator %s",
-                    c_call_str[param->call.status]);
+            if (_callbacks.cb_incoming_call && !_incoming_call)
+                esp_hf_client_query_current_calls();
+
+                // ingoingCall(nullptr, false);
             break;
         }
 
+        // Will be called for outgoing for otehr apps and simcard calls.
         case ESP_HF_CLIENT_CIND_CALL_SETUP_EVT:
         {
+            // if (param->call_setup.status != ESP_HF_CALL_SETUP_STATUS_INCOMING)
+            //     _incoming_call = false;
+
+            // if (param->call_setup.status == ESP_HF_CALL_SETUP_STATUS_OUTGOING_ALERTING && _incoming_call)
+            //     esp_hf_client_query_current_calls();
+
             ESP_LOGI(BT_HF_TAG, "--Call setup indicator %s",
                     c_call_setup_str[param->call_setup.status]);
+            // ESP_LOGI(BT_HF_TAG, "number that I am calling: %s", param->clip.number);
             break;
         }
 
@@ -426,8 +388,8 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
         {
             ESP_LOGI(BT_HF_TAG, "--clip number %s",
                     (param->clip.number == NULL) ? "NULL" : (param->clip.number));
-            if (_callbacks.cb_incoming_call)
-                _callbacks.cb_incoming_call((param->clip.number == NULL) ? "NULL" : (param->clip.number), true);
+            if (_callbacks.cb_incoming_call && !_incoming_call)
+                ingoingCall(param->clip.number, true);
             break;
         }
 
@@ -440,12 +402,27 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CLCC_EVT:
         {
+            _incoming_call = false;
+            // This will only be called on outgoing call.
             ESP_LOGI(BT_HF_TAG, "--Current call: idx %d, dir %s, state %s, mpty %s, number %s",
                     param->clcc.idx,
                     c_call_dir_str[param->clcc.dir],
                     c_call_state_str[param->clcc.status],
                     c_call_mpty_type_str[param->clcc.mpty],
                     (param->clcc.number == NULL) ? "NULL" : (param->clcc.number));
+
+            if (param->clcc.dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING)
+                ingoingCall(nullptr, false);
+            else if (strcmp(param->clcc.number, NO_SIMCARD_CALL_NUMBER) == 0)
+            {
+                _incoming_call = false;
+                outgoingCall(nullptr, false);
+            }
+            else
+             {
+                _incoming_call = false;
+                outgoingCall(param->clcc.number, true);
+             }
             break;
         }
 

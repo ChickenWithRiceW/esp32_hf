@@ -12,11 +12,18 @@ EspHf& hf = EspHf::getInstance();
 I2SClass speaker;
 
 
-void cbIncoming(const char *phone_number, bool sim_call) {
+void cbIncoming(char phone_number[15], bool sim_call) {
   if (sim_call)
     Serial.printf("Ingoing call from Simcard. Number %s", phone_number);
   else
     Serial.printf("Ingoing call from some app. Number %s", phone_number);
+}
+
+void cbOutgoing(char phone_number[15], bool sim_call) {
+  if (sim_call)
+    Serial.printf("Outgoing call from Simcard. Number %s", phone_number);
+  else
+    Serial.printf("Outgoing call from some app. Number %s", phone_number);
 }
 
 
@@ -27,6 +34,15 @@ void con(void) {
 void dis(void) {
   Serial.println("Disconnected");
 }
+
+void failed(void) {
+  Serial.println("Validation failed");
+}
+
+void success(void) {
+  Serial.println("Validation worked");
+}
+
 
 
 // Example
@@ -46,8 +62,13 @@ void setup() {
   // // Optional
   // hf.setSecurePairing(false);
   hf.setCbIncomingCall(cbIncoming);
+  hf.setCbOutgoingCall(cbOutgoing);
+
   hf.setCbBtConnected(con);
   hf.setCbBtDisconnected(dis);
+
+  hf.setCbPinCorrect(success);
+  hf.setCbPinIncorrect(failed);
 
 
 

@@ -18,7 +18,7 @@ extern "C" {
 #include <string.h>
 #include <unistd.h>
 
-#include "bt_app_hf.h"
+// #include "bt_app_hf.hpp"
 #include "esp_bt.h"
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
@@ -39,6 +39,12 @@ extern "C" {
 enum esp32_hfp {
     SUCCESS,
     BLUETOOTH_INIT_FAILED
+};
+
+struct t_arg {
+    void (*fn)(char phone_number[15], bool sim_call) = nullptr;
+    char phone_number[15];
+    bool is_simcard_call = false;
 };
 
 
@@ -74,14 +80,13 @@ struct t_callbacks
 
 
 
-    void (*cb_pin_correct)(void);
-    void (*cb_pin_incorrect)(void);
+    void (*cb_bt_pin_correct)(void);
+    void (*cb_bt_pin_incorrect)(void);
 
 
 
-    void (*cb_incoming_call)(const char *phone_number, bool sim_call);
-    void (*cb_outgoing_call)(const char *phone_number, bool sim_call);
-
+    void (*cb_incoming_call)(char phone_number[15], bool sim_call);
+    void (*cb_outgoing_call)(char phone_number[15], bool sim_call);
 };
 
 
@@ -151,16 +156,19 @@ class EspHf
      * Callback can be changed at runtime.
      * @return True if action was successful, false if error accrued.
      */
-    bool setCbIncomingCall(void (*ptr)(const char *phone_number, bool sim_call));
-
-
-
+     
+     
+     
+    bool setCbIncomingCall(void (*ptr)(char phone_number[15], bool sim_call));
+    bool setCbOutgoingCall(void (*ptr)(char phone_number[15], bool sim_call));
     bool setCbPinCorrect(void (*ptr)(void));
     bool setCbPinIncorrect(void (*ptr)(void));
 
     bool setCbBtConnected(void (*ptr)(void));
     bool setCbBtDisconnected(void (*ptr)(void));
 
+    static void wrap(void *ptr);
+    void pin_check(esp_bt_gap_cb_param_t *param);
 
 
     // Actions
@@ -192,9 +200,18 @@ class EspHf
         void gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr, char *peer_bdname, uint8_t *peer_bdname_len);
 
 
+
+        void audio_change(esp_hf_client_cb_param_t *param);
+        void connection_change(const esp_hf_client_cb_param_t *param);
+        void ingoingCall(const char *phone_number, bool is_simcard_call);
+        void outgoingCall(const char *phone_number, bool is_simcard_call);
+
+
         // Callback Wrapper
         static void cb_con_wrap(void *ptr);
         static void cb_dis_wrap(void *ptr);
+
+        static void call_wrap(void *ptr);
 
         
         bool validate_config(void);
@@ -209,6 +226,9 @@ class EspHf
         bool _already_run = false;
         bool _initialised = false;
         bool _connected = false;
+
+        // This is because of a bug in the system.
+        bool _incoming_call = true;
 
 
 

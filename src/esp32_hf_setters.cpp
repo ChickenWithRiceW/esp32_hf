@@ -69,7 +69,7 @@ bool EspHf::setSecurePairing(bool enable_ssp) {
 
 
 // Callbacks
-bool EspHf::setCbIncomingCall(void (*ptr)(const char *phone_number, bool sim_call)) {
+bool EspHf::setCbIncomingCall(void (*ptr)(char phone_number[15], bool sim_call)) {
     if (!ptr)
     {
         ESP_LOGE(BT_HF_TAG, "Incoming call callback can't be nullptr.");
@@ -79,13 +79,23 @@ bool EspHf::setCbIncomingCall(void (*ptr)(const char *phone_number, bool sim_cal
     return true;
 }
 
+bool EspHf::setCbOutgoingCall(void (*ptr)(char phone_number[15], bool sim_call)) {
+    if (!ptr)
+    {
+        ESP_LOGE(BT_HF_TAG, "Outgoing call callback can't be nullptr.");
+        return false;
+    }
+    _callbacks.cb_outgoing_call = ptr;
+    return true;
+}
+
 bool EspHf::setCbPinCorrect(void (*ptr)(void)) {
     if (!ptr)
     {
         ESP_LOGE(BT_HF_TAG, "Correct pin callback can't be nullptr.");
         return false;
     }
-    _callbacks.cb_pin_correct = ptr;
+    _callbacks.cb_bt_pin_correct = ptr;
     return true;
 }
 
@@ -95,7 +105,7 @@ bool EspHf::setCbPinIncorrect(void (*ptr)(void)) {
         ESP_LOGE(BT_HF_TAG, "Incorrect pin callback can't be nullptr.");
         return false;
     }
-    _callbacks.cb_pin_incorrect = ptr;
+    _callbacks.cb_bt_pin_incorrect = ptr;
     return true;
 }
 

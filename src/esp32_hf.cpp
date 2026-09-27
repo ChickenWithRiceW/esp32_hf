@@ -1,6 +1,6 @@
 #include "esp32_hf.hpp"
 
-static const char *TAG = "HFP";
+#define BT_HF_TAG "BT_HF_HF"
 
 
 EspHf::EspHf() {}
@@ -47,7 +47,7 @@ bool EspHf::begin(void)
 {
     if (this->_initialised)
     {
-        ESP_LOGE(TAG, "You already begin the hf, you cannot init it twice");
+        ESP_LOGE(BT_HF_TAG, "You already begin the hf, you cannot init it twice");
         return false;
     }
     this->_initialised = true;
@@ -71,11 +71,6 @@ void EspHf::setup_stacks(void)
     // ? I guess the black magic of what it does to enable it?
     esp_hf_client_init();
 
-    // Removed because pbac is not exposed in arduino core.
-#ifdef ESP_PLATFORM
-    // esp_pbac_register_callback(bt_app_pbac_cb);
-    // esp_pbac_init();
-#endif
 
     // Start device discovery Gap
     ESP_LOGI("BT_HF_TAG", "Starting device discovery...");
