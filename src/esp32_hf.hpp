@@ -203,8 +203,7 @@ class EspHf
 
         void audio_change(esp_hf_client_cb_param_t *param);
         void connection_change(const esp_hf_client_cb_param_t *param);
-        void ingoingCall(const char *phone_number, bool is_simcard_call);
-        void outgoingCall(const char *phone_number, bool is_simcard_call);
+        void call(const char *phone_number, bool is_simcard_call, void (*fn)(char *, bool));
 
 
         // Callback Wrapper
@@ -228,7 +227,7 @@ class EspHf
         bool _connected = false;
 
         // This is because of a bug in the system.
-        bool _incoming_call = true;
+        bool _incoming_call = false;
 
 
 
