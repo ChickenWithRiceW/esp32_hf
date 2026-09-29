@@ -1,12 +1,15 @@
-#include "esp32_hf.hpp"
+#include "esp32_hf_intern.hpp"
 
 #include "esp_hf_client_api.h"
 
 #define BT_HF_TAG "BT_HF_HF"
 
-EspHf::EspHf() {}
+// EspHf::EspHf() {}
 
-int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
+EspHf::EspHf() : _impl(new Impl) {}
+EspHf::~EspHf() = default;
+
+int EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled) {
     // Initialize NVS — it is used to store PHY calibration data
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -46,16 +49,16 @@ int EspHf::init_controller_and_bluetooth(bool ssp_enabled) {
 
 bool EspHf::begin(void)
 {
-    if (this->_initialised)
+    if (this->_impl->initialised)
     {
         ESP_LOGE(BT_HF_TAG, "You already begin the hf, you cannot init it twice");
         return false;
     }
-    this->_initialised = true;
+    this->_impl->initialised = true;
 
-    this->init_controller_and_bluetooth(this->_bt.ssp_enabled);
+    Impl::init_controller_and_bluetooth(this->_impl->bt.ssp_enabled);
 
-    this->setup_stacks();
+    this->_impl->setup_stacks();
 
     #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
         app_gpio_aec_io_cfg();
@@ -63,11 +66,10 @@ bool EspHf::begin(void)
     return true;
 }
 
-void EspHf::setup_stacks(void)
+void EspHf::Impl::setup_stacks(void)
 {
-    this->setup_bt_gap(this->_bt.device_name, this->_bt.ssp_enabled, this->_bt.legacy_pairing_pin);
-
-    esp_hf_client_register_callback(EspHf::bt_app_hf_client_cb_wrapper);
+    setup_bt_gap(bt.device_name, bt.ssp_enabled, bt.legacy_pairing_pin);
+    esp_hf_client_register_callback(Impl::bt_app_hf_client_cb_wrapper);
 
     // ? I guess the black magic of what it does to enable it?
     esp_hf_client_init();
@@ -78,8 +80,8 @@ void EspHf::setup_stacks(void)
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 }
 
-bool EspHf::validate_config(void) {
-    if (!this->_bt.device_name)
+bool EspHf::Impl::validate_config(void) {
+    if (!this->bt.device_name)
         return false;
 
     // if (!this->bt.legacy_pairing_pin)

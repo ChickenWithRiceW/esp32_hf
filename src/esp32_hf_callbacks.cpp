@@ -1,21 +1,21 @@
-#include "esp32_hf.hpp"
+#include "esp32_hf_intern.hpp"
 
-void EspHf::cb_con_wrap(void *ptr) {
+
+void EspHf::Impl::wrap(void *ptr) {
     reinterpret_cast<void (*)()>(ptr)();
     vTaskDelete(nullptr);
 }
 
-void EspHf::cb_dis_wrap(void *ptr) {
+void EspHf::Impl::ssp_auth(void *ptr) {
+    uint32_t auth_number;
+
+    auth_number
+
     reinterpret_cast<void (*)()>(ptr)();
     vTaskDelete(nullptr);
 }
 
-void EspHf::wrap(void *ptr) {
-    reinterpret_cast<void (*)()>(ptr)();
-    vTaskDelete(nullptr);
-}
-
-void EspHf::call_wrap(void *ptr) {
+void EspHf::Impl::call_wrap(void *ptr) {
     t_arg *p_arg;
 
     p_arg = reinterpret_cast<t_arg (*)>(ptr);

@@ -1,4 +1,4 @@
-#include "esp32_hf.hpp"
+#include "esp32_hf_intern.hpp"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
 
@@ -13,12 +13,7 @@ static bool get_name_from_eir(uint8_t *eir, char *bdname, uint8_t *bdname_len)
 
     if (!eir)
         return false;
-
     rmt_bdname = esp_bt_gap_resolve_eir_data(eir, ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME, &rmt_bdname_len);
-
-    // if (!rmt_bdname)
-    //     rmt_bdname = esp_bt_gap_resolve_eir_data(eir, ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME, &rmt_bdname_len);
-
     if (rmt_bdname)
     {
         if (rmt_bdname_len > ESP_BT_GAP_MAX_BDNAME_LEN)
@@ -37,7 +32,7 @@ static bool get_name_from_eir(uint8_t *eir, char *bdname, uint8_t *bdname_len)
     return false;
 }
 
-void EspHf::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr, char *peer_bdname, uint8_t *peer_bdname_len) {
+void EspHf::Impl::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr, char *peer_bdname, uint8_t *peer_bdname_len) {
     for (int i = 0; i < param->disc_res.num_prop; i++)
     {
         if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR &&
@@ -60,13 +55,13 @@ void EspHf::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_ad
 }
 
 
-int EspHf::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* legacy_pairing_pin)
+int EspHf::Impl::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* legacy_pairing_pin)
 {
     // Set up device name.
     esp_bt_gap_set_device_name(device_name);
 
     // Register GAP callback function. (The function that will handle conenction and discovery)
-    esp_bt_gap_register_callback(EspHf::esp_bt_gap_cb_wrapper);
+    esp_bt_gap_register_callback(Impl::esp_bt_gap_cb_wrapper);
 
     if (ssp_enabled)
     {
@@ -83,51 +78,55 @@ int EspHf::setup_bt_gap(const char *device_name, bool ssp_enabled, const char* l
     return true;
 }
 
-void EspHf::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+void EspHf::Impl::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
-    getInstance().esp_bt_gap_cb(event, param);
+    getInstance()._impl->esp_bt_gap_cb(event, param);
 }
 
-void EspHf::pin_check(esp_bt_gap_cb_param_t *param) {
+void EspHf::Impl::pin_check(esp_bt_gap_cb_param_t *param) {
     if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS)
     {
         ESP_LOGI(BT_HF_TAG, "authentication success: %s",
                 param->auth_cmpl.device_name);
-        if (_callbacks.cb_bt_pin_correct)
-            xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)_callbacks.cb_bt_pin_correct, 1, nullptr, 1);
+        if (callbacks.cb_bt_pin_correct)
+            xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)callbacks.cb_bt_pin_correct, 1, nullptr, 1);
     }
     else
     {
         ESP_LOGE(BT_HF_TAG, "authentication failed, status:%d",
                 param->auth_cmpl.stat);
-        if (_callbacks.cb_bt_pin_incorrect)
-            xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)_callbacks.cb_bt_pin_incorrect, 1, nullptr, 1);
+        if (callbacks.cb_bt_pin_incorrect)
+            xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)callbacks.cb_bt_pin_incorrect, 1, nullptr, 1);
     }
 }
 
-void EspHf::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+void EspHf::Impl::ssp_auth(esp_bd_addr_t bda, uint32_t num_val) {
+    ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06" PRIu32, num_val);
+    esp_bt_gap_ssp_confirm_reply(bda, true);
+
+    xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)callbacks.cb_bt_pin_incorrect, 1, nullptr, 1);
+
+}
+
+void EspHf::Impl::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
     switch (event)
     {
         case ESP_BT_GAP_DISC_RES_EVT:
-            gap_helper_device_discovered(param, this->_peer_addr, this->_peer_bdname, &this->_peer_bdname_len); break;
+            gap_helper_device_discovered(param, peer_addr, peer_bdname, &peer_bdname_len); break;
 
         case ESP_BT_GAP_AUTH_CMPL_EVT:
             pin_check(param); break;
 
         case ESP_BT_GAP_PIN_REQ_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "Input pin code: %s", this->_bt.legacy_pairing_pin);
-            esp_bt_gap_pin_reply(param->pin_req.bda, true, strlen(this->_bt.legacy_pairing_pin), (uint8_t *)this->_bt.legacy_pairing_pin);
+            ESP_LOGI(BT_HF_TAG, "Input pin code: %s", bt.legacy_pairing_pin);
+            esp_bt_gap_pin_reply(param->pin_req.bda, true, strlen(bt.legacy_pairing_pin), (uint8_t *)bt.legacy_pairing_pin);
             break;
         }
 
         case ESP_BT_GAP_CFM_REQ_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06" PRIu32, param->cfm_req.num_val);
-            esp_bt_gap_ssp_confirm_reply(param->cfm_req.bda, true);
-            break;
-        }
+            ssp_auth(param->cfm_req.bda, param->cfm_req.num_val); break;
         default:
             ESP_LOGI(BT_HF_TAG, "Event: %d", event);
     }

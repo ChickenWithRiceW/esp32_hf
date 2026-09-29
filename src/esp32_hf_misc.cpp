@@ -1,6 +1,6 @@
-#include "esp32_hf.hpp"
+#include "esp32_hf_intern.hpp"
 
-bool EspHf::isStrPrintable(const char *str) {
+bool EspHf::Impl::isStrPrintable(const char *str) {
 	size_t	i;
 
 	i = 0;

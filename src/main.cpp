@@ -87,5 +87,4 @@ void loop() {
   delay(10000);
 
   // This will most likely not work but I dont know.
-  esp_bt_gap_set_device_name("Changed name without");
 }
