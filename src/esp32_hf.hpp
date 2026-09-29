@@ -23,7 +23,7 @@ extern "C" {
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
-#include "esp_hf_client_api.h"
+// #include "esp_hf_client_api.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -35,6 +35,9 @@ extern "C" {
 #include "ESP_I2S.h"
 
 }
+
+struct esp_hf_client_cb_event_t;
+struct esp_hf_client_cb_param_t;
 
 enum esp32_hfp {
     SUCCESS,
@@ -95,8 +98,8 @@ class EspHf
     public:
         static EspHf& getInstance() {
             static EspHf obj;
-        return obj;
-    }
+            return obj;
+        }
 
     /**
      * @brief Setup bluetooth controller and enable classic bluetooth with defiend settings. DO NOT call without having set device name and legacy pin.
@@ -184,8 +187,10 @@ class EspHf
      * @return Return true regardless of if there is a incoming/outgoing call present or not. If begin was not called before return false.
      */
     bool rejectIncomingCall(void);
+
     
     private:
+
         EspHf(void);
         void setup_stacks(void);
         static void bt_app_hf_client_cb_wrapper(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);

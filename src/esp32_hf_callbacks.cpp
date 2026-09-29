@@ -20,6 +20,5 @@ void EspHf::call_wrap(void *ptr) {
 
     p_arg = reinterpret_cast<t_arg (*)>(ptr);
     p_arg->fn(p_arg->phone_number, p_arg->is_simcard_call);
-    free(p_arg);
     vTaskDelete(nullptr);
 }

@@ -12,14 +12,13 @@
 // This is the number that gets send by the esp32 internal when you call someone on any other app then over your normal Simcard.
 #define NO_SIMCARD_CALL_NUMBER "10000000"
 
-
 extern "C" {
 #include "esp_hf_defs.h"
 #include <stdint.h>
 #include "esp_hf_client_api.h"
 #include "freertos/ringbuf.h"
-
 }
+
 
 
 // esp_hf_service_availability_status_t
@@ -217,19 +216,17 @@ void EspHf::audio_change(esp_hf_client_cb_param_t *param) {
 }
 
 void EspHf::call(const char *phone_number, bool is_simcard_call, void (*fn)(char *, bool)) {
-    t_arg *p_arg;
+    static t_arg arg;
 
-    p_arg = (t_arg *)malloc(sizeof(t_arg));
-
-    p_arg->fn = fn;
-    p_arg->is_simcard_call = is_simcard_call;
+    arg.fn = fn;
+    arg.is_simcard_call = is_simcard_call;
 
     if (!is_simcard_call)
-        p_arg->phone_number[0] = '\0';
+        arg.phone_number[0] = '\0';
     else
-        strcpy(p_arg->phone_number, phone_number);
+        strcpy(arg.phone_number, phone_number);
 
-    xTaskCreatePinnedToCore(call_wrap, nullptr, 4096, (void *)p_arg, 1, nullptr, 1);
+    xTaskCreatePinnedToCore(call_wrap, nullptr, 4096, &arg, 1, nullptr, 1);
 }
 
 
@@ -313,6 +310,7 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
 
         case ESP_HF_CLIENT_CLCC_EVT:
         {
+            bool has_phone_number = (strcmp(param->clcc.number, NO_SIMCARD_CALL_NUMBER) != 0);
             // This will only be called on outgoing call.
             ESP_LOGI(BT_HF_TAG, "--Current call: idx %d, dir %s, state %s, mpty %s, number %s",
                     param->clcc.idx,
@@ -322,9 +320,9 @@ void EspHf::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb
                     (param->clcc.number == NULL) ? "NULL" : (param->clcc.number));
 
             if (param->clcc.dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || _incoming_call)
-                call(param->clcc.number, (strcmp(param->clcc.number, NO_SIMCARD_CALL_NUMBER) != 0), _callbacks.cb_incoming_call);
+                call(param->clcc.number, has_phone_number, _callbacks.cb_incoming_call);
             else
-                call(param->clcc.number, (strcmp(param->clcc.number, NO_SIMCARD_CALL_NUMBER) != 0), _callbacks.cb_outgoing_call);
+                call(param->clcc.number, has_phone_number, _callbacks.cb_outgoing_call);
             
             _incoming_call = false;
             break;

@@ -1,7 +1,8 @@
 #include "esp32_hf.hpp"
 
-#define BT_HF_TAG "BT_HF_HF"
+#include "esp_hf_client_api.h"
 
+#define BT_HF_TAG "BT_HF_HF"
 
 EspHf::EspHf() {}
 
