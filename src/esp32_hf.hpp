@@ -22,7 +22,6 @@ class EspHf
             return obj;
         }
 
-        // Must be defined in the .cpp, where Impl is a complete type.
         ~EspHf();
 
         EspHf(const EspHf&) = delete;
@@ -69,19 +68,36 @@ class EspHf
                              int8_t din = (int8_t)(-1), int8_t mclk = (int8_t)(-1));
 
         /**
-         * @brief Enable/disable secure pairing (ssp). If disabled legacy pin will be used.
+         * @brief Enable/disable secure pairing (ssp). If disabled legacy pin will be forced.
          * @return True if action was successful, false if error occurred.
          */
         bool setSecurePairing(bool enable_ssp);
 
-        // Callback setters. Callbacks can be changed at runtime.
-        // @return True if action was successful, false if error occurred.
+        /* Callback setters. Callbacks can be changed at runtime. */
+
+        /**
+         * @brief Set callback for incoming calls. Value 'sim_call' will be true when you get a call on your simcard.
+         * If phone call is over simcard you will get the phone number of who is calling you.
+         * @param ptr Function pointer.
+         * @return True if action was successful, false if error occurred.
+         */
         bool setCbIncomingCall(void (*ptr)(char phone_number[15], bool sim_call));
+
+        /**
+         * @brief Set callback for outgoing calls. Value 'sim_call' will be true when you call over your simcard.
+         * If phone call is over simcard you will get the phone number of who you are calling.
+         * @param ptr Function pointer.
+         * @return True if action was successful, false if error occurred.
+         */
         bool setCbOutgoingCall(void (*ptr)(char phone_number[15], bool sim_call));
+
         bool setCbPinCorrect(void (*ptr)(void));
         bool setCbPinIncorrect(void (*ptr)(void));
         bool setCbBtConnected(void (*ptr)(void));
         bool setCbBtDisconnected(void (*ptr)(void));
+
+        bool setCbSspAuth(void (*ptr)(char[6]));
+        bool setCbLegacyAuth(void (*ptr)(void));
 
         // Actions
 

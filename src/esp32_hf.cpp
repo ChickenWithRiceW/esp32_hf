@@ -9,7 +9,7 @@
 EspHf::EspHf() : _impl(new Impl) {}
 EspHf::~EspHf() = default;
 
-int EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled) {
+bool EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled) {
     // Initialize NVS — it is used to store PHY calibration data
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
@@ -25,26 +25,26 @@ int EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled) {
     bt_cfg.mode = ESP_BT_MODE_CLASSIC_BT;
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
+        return false;
     }
 
     if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
+        return false;
     }
 
     esp_bluedroid_config_t bluedroid_cfg = BT_BLUEDROID_INIT_CONFIG_DEFAULT();
     bluedroid_cfg.ssp_en = ssp_enabled;
     if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
+        return false;
     }
 
     if ((ret = esp_bluedroid_enable()) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable bluedroid failed: %s", __func__, esp_err_to_name(ret));
-        return ret;
+        return false;
     }
-    return SUCCESS;
+    return true;
 }
 
 bool EspHf::begin(void)
@@ -54,26 +54,31 @@ bool EspHf::begin(void)
         ESP_LOGE(BT_HF_TAG, "You already begin the hf, you cannot init it twice");
         return false;
     }
-    this->_impl->initialised = true;
 
-    Impl::init_controller_and_bluetooth(this->_impl->bt.ssp_enabled);
-
-    this->_impl->setup_stacks();
-
+    if (!_impl->validate_config())
+        return false;
+    
+    if (!_impl->init_controller_and_bluetooth(_impl->bt.ssp_enabled));
+        return false;
+    
+    if (!_impl->setup_stacks())
+        return false;
+    
     #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
         app_gpio_aec_io_cfg();
     #endif
+
+    _impl->initialised = true;
     return true;
 }
 
-void EspHf::Impl::setup_stacks(void)
+bool EspHf::Impl::setup_stacks(void)
 {
-    setup_bt_gap(bt.device_name, bt.ssp_enabled, bt.legacy_pairing_pin);
-    esp_hf_client_register_callback(Impl::bt_app_hf_client_cb_wrapper);
+    if (!setup_bt_gap(bt.device_name, bt.ssp_enabled, bt.legacy_pairing_pin))
+        return false;
 
-    // ? I guess the black magic of what it does to enable it?
-    esp_hf_client_init();
-
+    ERROR_CHECK(esp_hf_client_register_callback(Impl::bt_app_hf_client_cb_wrapper), "Could not register hf client callback.")
+    ERROR_CHECK(esp_hf_client_init(), "Could not initialize hf client.")
 
     // Start device discovery Gap
     ESP_LOGI("BT_HF_TAG", "Starting device discovery...");
@@ -81,10 +86,16 @@ void EspHf::Impl::setup_stacks(void)
 }
 
 bool EspHf::Impl::validate_config(void) {
-    if (!this->bt.device_name)
+    if (!bt.device_name)
+    {
+        ESP_LOGE(BT_HF_TAG, "No device name set.");
         return false;
+    }
 
-    // if (!this->bt.legacy_pairing_pin)
-    //     return false;
+    if (!bt.legacy_pairing_pin)
+    {
+        ESP_LOGE(BT_HF_TAG, "No legacy pin set.");
+        return false;
+    }
     return true;
 }

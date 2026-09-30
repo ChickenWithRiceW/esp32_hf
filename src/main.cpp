@@ -56,6 +56,7 @@ void setup() {
   // Mandatory setup.
   hf.setDeviceName("ESP-HF TEST");
   hf.setLegacyPin("0123456789123456");
+
   // hf.setSpeakerI2s(&speaker);
   // hf.setSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DIN);
 

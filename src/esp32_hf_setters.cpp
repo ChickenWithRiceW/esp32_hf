@@ -18,6 +18,7 @@ bool EspHf::setDeviceName(const char *str) {
     return true;
 }
 
+// TODO: Can change on runtime ?
 bool EspHf::setLegacyPin(const char *str) {
     ASSERT_NOT_INIT
     if (!str || !str[0])
@@ -70,6 +71,8 @@ bool EspHf::setSecurePairing(bool enable_ssp) {
 
 
 // Callbacks
+
+
 bool EspHf::setCbIncomingCall(void (*ptr)(char phone_number[15], bool sim_call)) {
     if (!ptr)
     {
@@ -107,6 +110,26 @@ bool EspHf::setCbPinIncorrect(void (*ptr)(void)) {
         return false;
     }
     _impl->callbacks.cb_bt_pin_incorrect = ptr;
+    return true;
+}
+
+bool EspHf::setCbSspAuth(void (*ptr)(char[6])) {
+    if (!ptr)
+    {
+        ESP_LOGE(BT_HF_TAG, "SSP auth callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_bt_ssp_auth = ptr;
+    return true;
+}
+
+bool EspHf::setCbLegacyAuth(void (*ptr)(void)) {
+    if (!ptr)
+    {
+        ESP_LOGE(BT_HF_TAG, "Legacy auth callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_bt_legacy_pin = ptr;
     return true;
 }
 

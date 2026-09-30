@@ -38,6 +38,8 @@ extern "C" {
 #define ASSERT_INIT     if (!this->_impl->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
 #define ASSERT_NOT_INIT if (this->_impl->initialised)  {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
 
+#define ERROR_CHECK(fn, msg) if (fn != ESP_OK) {ESP_LOGE(BT_HF_TAG, msg); return false;}
+
 struct t_arg {
     void (*fn)(char phone_number[15], bool sim_call) = nullptr;
     char phone_number[15];
@@ -45,8 +47,8 @@ struct t_arg {
 };
 
 struct t_auth {
-    void (*fn)(int) = nullptr;
-    int auth_number;
+    void (*fn)(char[6]) = nullptr;
+    char auth_number[6];
 };
 
 struct t_bluetooth
@@ -79,6 +81,10 @@ struct t_callbacks
     void (*cb_bt_pin_correct)(void)   = nullptr;
     void (*cb_bt_pin_incorrect)(void) = nullptr;
 
+    void (*cb_bt_ssp_auth)(char ssp_pin[6]) = nullptr;
+    void (*cb_bt_legacy_pin)(void) = nullptr;
+
+
     void (*cb_incoming_call)(char phone_number[15], bool sim_call) = nullptr;
     void (*cb_outgoing_call)(char phone_number[15], bool sim_call) = nullptr;
 };
@@ -101,19 +107,19 @@ struct EspHf::Impl
     bool          incoming_call = false;
 
     // ---- Private functions (formerly private/public-internal members of EspHf) ----
-    void        setup_stacks(void);
+    bool        setup_stacks(void);
     bool        validate_config(void);
     static bool isStrPrintable(const char *str);
 
-    static int  init_controller_and_bluetooth(bool ssp_enabled);
-    static int  setup_bt_gap(const char *device_name, bool ssp_enabled, const char *legacy_pairing_pin);
+    static bool  init_controller_and_bluetooth(bool ssp_enabled);
+    static bool  setup_bt_gap(const char *device_name, bool ssp_enabled, const char *legacy_pairing_pin);
 
     void        esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
     void        bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
     void        bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz);
     void        gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr,
                                                 char *peer_bdname, uint8_t *peer_bdname_len);
-    void        pin_check(esp_bt_gap_cb_param_t *param);
+    void        auth_success_check(esp_bt_gap_cb_param_t *param);
     void        ssp_auth(esp_bd_addr_t bda, uint32_t num_val);
 
     void        audio_change(esp_hf_client_cb_param_t *param);
@@ -127,4 +133,5 @@ struct EspHf::Impl
 
     static void wrap(void *ptr);
     static void call_wrap(void *ptr);
+    static void ssp_auth_wrap(void *ptr);
 };

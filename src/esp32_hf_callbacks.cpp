@@ -6,12 +6,11 @@ void EspHf::Impl::wrap(void *ptr) {
     vTaskDelete(nullptr);
 }
 
-void EspHf::Impl::ssp_auth(void *ptr) {
-    uint32_t auth_number;
+void EspHf::Impl::ssp_auth_wrap(void *ptr) {
+    t_auth *p_auth;
 
-    auth_number
-
-    reinterpret_cast<void (*)()>(ptr)();
+    p_auth = reinterpret_cast<t_auth (*)>(ptr);
+    p_auth->fn(p_auth->auth_number);
     vTaskDelete(nullptr);
 }
 
