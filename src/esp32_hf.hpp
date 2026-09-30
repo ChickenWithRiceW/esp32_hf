@@ -54,6 +54,12 @@ class EspHf
         bool setLegacyPin(const char *legacy_pin);
 
         /**
+         * @brief Enable/disable secure pairing (ssp). If disabled legacy pin will be forced.
+         * @return True if action was successful, false if error occurred.
+         */
+        bool setSecurePairing(bool enable_ssp);
+
+        /**
          * @brief Set I2S object for speaker. Object must be init with setPin and begin.
          * @param speaker Pointer to I2SClass object.
          * @return True if action was successful, false if error occurred.
@@ -66,12 +72,6 @@ class EspHf
          */
         I2SClass *setSpeaker(int8_t bclk, int8_t ws, int8_t dout,
                              int8_t din = (int8_t)(-1), int8_t mclk = (int8_t)(-1));
-
-        /**
-         * @brief Enable/disable secure pairing (ssp). If disabled legacy pin will be forced.
-         * @return True if action was successful, false if error occurred.
-         */
-        bool setSecurePairing(bool enable_ssp);
 
         /* Callback setters. Callbacks can be changed at runtime. */
 

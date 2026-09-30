@@ -191,13 +191,13 @@ void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t *param) {
         // param->conn_stat.peer_feat,
         // param->conn_stat.chld_feat);
 
-    if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && connected) {
-        connected = false;
+    if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _info.connected) {
+        _info.connected = false;
         if (callbacks.cb_bt_disconnected)
             xTaskCreatePinnedToCore(wrap, "dis", 4096, (void *)callbacks.cb_bt_disconnected, 1, nullptr, 1);
     }
-    else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !connected) {
-        connected = true;
+    else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_info.connected) {
+        _info.connected = true;
         if (callbacks.cb_bt_connected)
             xTaskCreatePinnedToCore(wrap, "con", 4096, (void *)callbacks.cb_bt_connected, 1, nullptr, 1);
     }
@@ -219,7 +219,7 @@ void EspHf::Impl::audio_change(esp_hf_client_cb_param_t *param) {
 }
 
 void EspHf::Impl::call(const char *phone_number, bool is_simcard_call, void (*fn)(char *, bool)) {
-    static t_arg arg;
+    static t_call arg;
 
     arg.fn = fn;
     arg.is_simcard_call = is_simcard_call;
@@ -232,39 +232,56 @@ void EspHf::Impl::call(const char *phone_number, bool is_simcard_call, void (*fn
     xTaskCreatePinnedToCore(call_wrap, nullptr, 4096, &arg, 1, nullptr, 1);
 }
 
+void EspHf::Impl::call_event(char *phone_number, esp_hf_current_call_direction_t dir) {
+    bool has_phone_number = (strcmp(phone_number, NO_SIMCARD_CALL_NUMBER) != 0);
+    // This will only be called on outgoing call.
+
+    if (dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || incoming_call)
+    {
+        _info.state = INCOMING_CALL;
+        call(phone_number, has_phone_number, callbacks.cb_incoming_call);
+    }
+    else
+    {
+        _info.state = OUTGOING_CALL;
+        call(phone_number, has_phone_number, callbacks.cb_outgoing_call);
+    }
+    incoming_call = false;
+}
+
 
 #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
 /* callback for HF_CLIENT */
 void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
     switch (event) {
-        ESP_LOGI(BT_HF_TAG, "--audio state %d", param->audio_stat.state);
-
         case ESP_HF_CLIENT_CONNECTION_STATE_EVT:
             connection_change(param); break;
 
         case ESP_HF_CLIENT_AUDIO_STATE_EVT:
             audio_change(param); break;
 
+        case ESP_HF_CLIENT_CLCC_EVT:
+            call_event(param->clcc.number, param->clcc.dir); break;
+
         case ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--NETWORK STATE %s",
-                    c_service_availability_status_str[param->service_availability.status]);
+            ESP_LOGI(BT_HF_TAG, "--NETWORK STATE %s", c_service_availability_status_str[param->service_availability.status]);
+            _info.network_available = param->service_availability.status;
             break;
         }
 
-
         case ESP_HF_CLIENT_CIND_SIGNAL_STRENGTH_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "-- signal strength: %d",
-                    param->signal_strength.value);
+            ESP_LOGI(BT_HF_TAG, "-- signal strength: %d", param->signal_strength.value);
+            _info.signal_strength = param->signal_strength.value;
             break;
         }
 
         case ESP_HF_CLIENT_CIND_BATTERY_LEVEL_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--battery level %d",
-                    param->battery_level.value);
+            ESP_LOGI(BT_HF_TAG, "--battery level %d", param->battery_level.value);
+            _info.battery_level = param->battery_level.value;
             break;
         }
 
@@ -287,6 +304,8 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
                 esp_hf_client_query_current_calls();
             else
                 incoming_call = false;
+            if (param->call_setup.status == ESP_HF_CALL_SETUP_STATUS_IDLE)
+                _info.state = IDLE_CONNECTED;
             break;
         }
 
@@ -311,26 +330,6 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
             break;
         }
 
-        case ESP_HF_CLIENT_CLCC_EVT:
-        {
-            bool has_phone_number = (strcmp(param->clcc.number, NO_SIMCARD_CALL_NUMBER) != 0);
-            // This will only be called on outgoing call.
-            ESP_LOGI(BT_HF_TAG, "--Current call: idx %d, dir %s, state %s, mpty %s, number %s",
-                    param->clcc.idx,
-                    c_call_dir_str[param->clcc.dir],
-                    c_call_state_str[param->clcc.status],
-                    c_call_mpty_type_str[param->clcc.mpty],
-                    (param->clcc.number == NULL) ? "NULL" : (param->clcc.number));
-
-            if (param->clcc.dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || incoming_call)
-                call(param->clcc.number, has_phone_number, callbacks.cb_incoming_call);
-            else
-                call(param->clcc.number, has_phone_number, callbacks.cb_outgoing_call);
-            
-            incoming_call = false;
-            break;
-        }
-
         case ESP_HF_CLIENT_VOLUME_CONTROL_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--volume_target: %s, volume %d",
@@ -339,56 +338,5 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
             break;
         }
 
-        case ESP_HF_CLIENT_AT_RESPONSE_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--AT response event, code %d, cme %d",
-                    param->at_response.code, param->at_response.cme);
-            break;
-        }
-
-        case ESP_HF_CLIENT_CNUM_EVT:
-        {
-            // ESP_LOGI(BT_HF_TAG, "--subscriber type %s, number %s",
-            //         c_subscriber_service_type_str[param->cnum.type],
-            //         (param->cnum.number == NULL) ? "NULL" : param->cnum.number);
-
-            ESP_LOGI(BT_HF_TAG, "--subscriber type: %d, number %s",
-                        param->cnum.type,
-                        (param->cnum.number == NULL) ? "NULL" : param->cnum.number);
-            break;
-        }
-
-        case ESP_HF_CLIENT_BSIR_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--inband ring state %s",
-                    c_inband_ring_state_str[param->bsir.state]);
-            break;
-        }
-
-        case ESP_HF_CLIENT_BINP_EVT:
-        {
-            ESP_LOGI(BT_HF_TAG, "--last voice tag number: %s",
-                    (param->binp.number == NULL) ? "NULL" : param->binp.number);
-            break;
-        }
-        case ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT:
-        {
-            ESP_LOGE(BT_HF_TAG, "ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT: %d", event);
-            break;
-        }
-        case ESP_HF_CLIENT_PROF_STATE_EVT:
-        {
-            if (ESP_HF_INIT_SUCCESS == param->prof_stat.state) {
-                ESP_LOGI(BT_HF_TAG, "HF PROF STATE: Init Complete");
-            } else if (ESP_HF_DEINIT_SUCCESS == param->prof_stat.state) {
-                ESP_LOGI(BT_HF_TAG, "HF PROF STATE: Deinit Complete");
-            } else {
-                ESP_LOGE(BT_HF_TAG, "HF PROF STATE error: %d", param->prof_stat.state);
-            }
-            break;
-        }
-        default:
-            ESP_LOGE(BT_HF_TAG, "HF_CLIENT EVT: %d", event);
-            break;
     }
 }

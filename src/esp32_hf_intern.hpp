@@ -1,5 +1,3 @@
-// INTERNAL header. Only include this from EspHf*.cpp files, never from user code.
-// It contains all ESP-IDF / Arduino includes and the private implementation of EspHf.
 
 #pragma once
 
@@ -20,7 +18,7 @@ extern "C" {
 #include "esp_bt_device.h"
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
-#include "esp_hf_client_api.h"   // real header, replaces the invalid struct forward declarations
+#include "esp_hf_client_api.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
@@ -34,13 +32,12 @@ extern "C" {
 
 #define MSBC_BITRATE 16000
 
-// Used inside EspHf member functions (BT_HF_TAG must be defined in your .cpp).
 #define ASSERT_INIT     if (!this->_impl->initialised) {ESP_LOGE(BT_HF_TAG, "Can't call function without begin being called first."); return false;}
 #define ASSERT_NOT_INIT if (this->_impl->initialised)  {ESP_LOGE(BT_HF_TAG, "Can't call function if begin was called earlier."); return false;}
 
 #define ERROR_CHECK(fn, msg) if (fn != ESP_OK) {ESP_LOGE(BT_HF_TAG, msg); return false;}
 
-struct t_arg {
+struct t_call {
     void (*fn)(char phone_number[15], bool sim_call) = nullptr;
     char phone_number[15];
     bool is_simcard_call = false;
@@ -59,8 +56,6 @@ struct t_bluetooth
     const char *legacy_pairing_pin = nullptr;
     // Secured pairing, if disabled fallback to legacy pin pairing.
     bool ssp_enabled = true;
-    // ESP will automatically connect to any host if not defined otherwise.
-    bool auto_connect_to_host = false;
 };
 
 struct t_speaker
@@ -71,6 +66,22 @@ struct t_speaker
     uint8_t pcm_fsync_pin = 25;
     uint8_t pcm_dout_pin  = 26;
     uint8_t pcm_din_pin   = 35;
+};
+
+enum e_state {
+    IDLE_DISCONNECTED = 0,
+    IDLE_CONNECTED,
+    IN_CALL,
+    INCOMING_CALL,
+    OUTGOING_CALL,
+};
+
+struct t_info {
+    int     battery_level = 0;
+    int     signal_strength = 0;
+    e_state state;
+    bool    network_available = false;
+    bool    connected = false;
 };
 
 struct t_callbacks
@@ -101,7 +112,7 @@ struct EspHf::Impl
     uint8_t       peer_bdname_len = 0;
     bool          already_run  = false;
     bool          initialised  = false;
-    bool          connected    = false;
+    t_info _info;
 
     // This is because of a bug in the system.
     bool          incoming_call = false;
@@ -116,6 +127,7 @@ struct EspHf::Impl
 
     void        esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param);
     void        bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param);
+    void        call_event(char *phone_number, esp_hf_current_call_direction_t dir);
     void        bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz);
     void        gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp_bd_addr_t peer_addr,
                                                 char *peer_bdname, uint8_t *peer_bdname_len);

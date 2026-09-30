@@ -15,9 +15,9 @@ void EspHf::Impl::ssp_auth_wrap(void *ptr) {
 }
 
 void EspHf::Impl::call_wrap(void *ptr) {
-    t_arg *p_arg;
+    t_call *p_arg;
 
-    p_arg = reinterpret_cast<t_arg (*)>(ptr);
+    p_arg = reinterpret_cast<t_call (*)>(ptr);
     p_arg->fn(p_arg->phone_number, p_arg->is_simcard_call);
     vTaskDelete(nullptr);
 }
