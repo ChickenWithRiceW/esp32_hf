@@ -70,7 +70,7 @@ bool EspHf::setSecurePairing(bool enable_ssp) {
 
 
 
-// Callbacks
+// --- Callbacks
 
 
 bool EspHf::setCbIncomingCall(void (*ptr)(char phone_number[15], bool sim_call)) {

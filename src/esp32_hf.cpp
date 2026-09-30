@@ -80,8 +80,6 @@ bool EspHf::Impl::setup_stacks(void)
     ERROR_CHECK(esp_hf_client_register_callback(Impl::bt_app_hf_client_cb_wrapper), "Could not register hf client callback.")
     ERROR_CHECK(esp_hf_client_init(), "Could not initialize hf client.")
 
-    // Start device discovery Gap
-    ESP_LOGI("BT_HF_TAG", "Starting device discovery...");
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 }
 

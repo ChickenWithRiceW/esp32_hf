@@ -68,13 +68,6 @@ struct t_speaker
     uint8_t pcm_din_pin   = 35;
 };
 
-enum e_state {
-    IDLE_DISCONNECTED = 0,
-    IDLE_CONNECTED,
-    IN_CALL,
-    INCOMING_CALL,
-    OUTGOING_CALL,
-};
 
 struct t_info {
     int     battery_level = 0;
@@ -102,7 +95,6 @@ struct t_callbacks
 
 struct EspHf::Impl
 {
-    // ---- State (formerly private members of EspHf) ----
     t_bluetooth  bt;
     t_speaker    speaker;
     t_callbacks  callbacks;
@@ -117,7 +109,6 @@ struct EspHf::Impl
     // This is because of a bug in the system.
     bool          incoming_call = false;
 
-    // ---- Private functions (formerly private/public-internal members of EspHf) ----
     bool        setup_stacks(void);
     bool        validate_config(void);
     static bool isStrPrintable(const char *str);

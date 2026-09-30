@@ -14,6 +14,14 @@ enum esp32_hfp {
     BLUETOOTH_INIT_FAILED
 };
 
+enum e_state {
+    IDLE_DISCONNECTED = 0,
+    IDLE_CONNECTED,
+    IN_CALL,
+    INCOMING_CALL,
+    OUTGOING_CALL,
+};
+
 class EspHf
 {
     public:
@@ -112,6 +120,10 @@ class EspHf
          * @return True regardless of whether a call is present. False if begin was not called before.
          */
         bool rejectIncomingCall(void);
+
+
+        // --- Getters
+        e_state getState(void);
 
     private:
         EspHf();
