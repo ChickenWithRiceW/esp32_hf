@@ -44,6 +44,7 @@ const char *c_volume_control_target_str[] = {
 void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t *param) {
     if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _info.connected) {
         _info.connected = false;
+        esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
         if (callbacks.cb_bt_disconnected)
             xTaskCreatePinnedToCore(wrap, "dis", 4096, (void *)callbacks.cb_bt_disconnected, 1, nullptr, 1);
     }

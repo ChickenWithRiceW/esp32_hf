@@ -66,13 +66,15 @@ void EspHf::Impl::bt_app_hf_client_incoming_cb_wrapper(const uint8_t *buf, uint3
 }
 
 void EspHf::Impl::audio_change(esp_hf_client_cb_param_t *param) {
-    // if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
-    //     param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) 
-    // {
-    //     esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper, bt_app_hf_client_outgoing_cb);
-    //     bt_app_hf_client_audio_open();
-    // }
-    // else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED)
-    //     bt_app_hf_client_audio_close();
+    if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
+        param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) 
+    {
+        // esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper, bt_app_hf_client_outgoing_cb);
+        // bt_app_hf_client_audio_open();
+        _info.state = IN_CALL;
+    }
+    else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED)
+        _info.state = IDLE_CONNECTED;
+        // bt_app_hf_client_audio_close();
     ESP_LOGI("DONT NEED", "STILL NO NEED");
 }

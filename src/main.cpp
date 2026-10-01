@@ -57,7 +57,7 @@ void setup() {
   // I2SClass *speaker = hf.setSpeaker(12, 45, 67);
 
   // Mandatory setup.
-  hf.setDeviceName("ESP-HF TEST");
+  hf.setDeviceName("ESP-HF 42");
   hf.setLegacyPin("0123456789123456");
 
   // hf.setSpeakerI2s(&speaker);
@@ -89,7 +89,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  delay(10000);
+  delay(1000);
+  // Serial.println(hf.getState());
 
   // This will most likely not work but I dont know.
 }
