@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include "esp32_hf.hpp"
@@ -44,8 +43,8 @@ struct t_call {
 };
 
 struct t_auth {
-    void (*fn)(char[6]) = nullptr;
-    char auth_number[6];
+    void (*fn)(char[7]) = nullptr;
+    char auth_number[7];
 };
 
 struct t_bluetooth

@@ -43,6 +43,9 @@ void success(void) {
   Serial.println("Validation worked");
 }
 
+void ssp_auth(char *name) {
+  Serial.println(name);
+}
 
 
 // Example
@@ -71,6 +74,7 @@ void setup() {
   hf.setCbPinCorrect(success);
   hf.setCbPinIncorrect(failed);
 
+  hf.setCbSspAuth(ssp_auth);
 
 
 
@@ -78,7 +82,7 @@ void setup() {
   // Serial.printf("WITHOUT INIT: %d\n", esp_hf_client_answer_call());
   // Serial.print(hf.acceptIncomingCall());
 
-  hf.begin();
+  Serial.println(hf.begin());
 
   // speakerTest();
 }

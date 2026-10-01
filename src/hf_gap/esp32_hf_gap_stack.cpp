@@ -47,6 +47,7 @@ void EspHf::Impl::gap_helper_device_discovered(esp_bt_gap_cb_param_t *param, esp
             {
                 ESP_LOGI(BT_HF_TAG, "Connected to device: %s", peer_bdname);
                 esp_bt_gap_cancel_discovery();
+                break;
             }
         }
     }
@@ -83,8 +84,8 @@ void EspHf::Impl::auth_success_check(esp_bt_gap_cb_param_t *param) {
     }
     else
     {
-        ESP_LOGE(BT_HF_TAG, "authentication failed, status:%d",
-            param->auth_cmpl.device_name);
+        ESP_LOGE(BT_HF_TAG, "authentication failed, status: %d",
+            param->auth_cmpl.stat);
         if (callbacks.cb_bt_pin_incorrect)
             xTaskCreatePinnedToCore(wrap, nullptr, 4096, (void *)callbacks.cb_bt_pin_incorrect, 1, nullptr, 1);
     }
@@ -95,10 +96,11 @@ void EspHf::Impl::ssp_auth(esp_bd_addr_t bda, uint32_t num_val) {
     
     ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06" PRIu32, num_val);
     esp_bt_gap_ssp_confirm_reply(bda, true);
-
+    
     if (!callbacks.cb_bt_ssp_auth)
         return;
-    itoa(num_val, a.auth_number, 6);
+    snprintf(a.auth_number, sizeof(a.auth_number), "%06" PRIu32, num_val);
+    // itoa(num_val, a.auth_number, 6);
     a.fn = callbacks.cb_bt_ssp_auth;
     
     xTaskCreatePinnedToCore(ssp_auth_wrap, nullptr, 4096, (void *)&a, 1, nullptr, 1);

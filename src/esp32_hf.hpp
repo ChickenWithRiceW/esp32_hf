@@ -1,8 +1,3 @@
-// Public interface for the ESP32 Bluetooth Hands-Free client.
-//
-// This header intentionally includes NO ESP-IDF / Arduino headers.
-// All of that lives in EspHf_impl.hpp, which is only included by the .cpp files.
-
 #pragma once
 
 #include <stdint.h>
@@ -104,7 +99,7 @@ class EspHf
         bool setCbBtConnected(void (*ptr)(void));
         bool setCbBtDisconnected(void (*ptr)(void));
 
-        bool setCbSspAuth(void (*ptr)(char[6]));
+        bool setCbSspAuth(void (*ptr)(char[7]));
         bool setCbLegacyAuth(void (*ptr)(void));
 
         // Actions

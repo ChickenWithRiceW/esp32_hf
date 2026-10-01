@@ -56,13 +56,22 @@ bool EspHf::begin(void)
     }
 
     if (!_impl->validate_config())
+    {
+        ESP_LOGE(BT_HF_TAG, "Validate fail");
         return false;
+    }
     
-    if (!_impl->init_controller_and_bluetooth(_impl->bt.ssp_enabled));
+    if (!_impl->init_controller_and_bluetooth(_impl->bt.ssp_enabled))
+    {
+        ESP_LOGE(BT_HF_TAG, "Init did not work");
         return false;
+    }
     
     if (!_impl->setup_stacks())
+    {
+        ESP_LOGE(BT_HF_TAG, "Stack didnt work");
         return false;
+    }
     
     #if ACOUSTIC_ECHO_CANCELLATION_ENABLE
         app_gpio_aec_io_cfg();
@@ -81,6 +90,7 @@ bool EspHf::Impl::setup_stacks(void)
     ERROR_CHECK(esp_hf_client_init(), "Could not initialize hf client.")
 
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
+    return true;
 }
 
 bool EspHf::Impl::validate_config(void) {

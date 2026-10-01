@@ -10,7 +10,6 @@ extern "C" {
 #include "esp_hf_defs.h"
 #include <stdint.h>
 #include "esp_hf_client_api.h"
-#include "freertos/ringbuf.h"
 }
 
 
@@ -111,7 +110,7 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
 
         case ESP_HF_CLIENT_CIND_SIGNAL_STRENGTH_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "-- signal strength: %d", param->signal_strength.value);
+            ESP_LOGI(BT_HF_TAG, "--signal strength: %d", param->signal_strength.value);
             _info.signal_strength = param->signal_strength.value;
             break;
         }
