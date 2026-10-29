@@ -223,7 +223,7 @@ void EspHf::Impl::bt_app_hf_client_incoming_cb_wrapper(const uint8_t* buf, uint3
 void EspHf::Impl::audio_change(esp_hf_client_cb_param_t* param)
 {
     if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED || param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-        esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb_wrapper, speaker.p_speaker ? bt_app_hf_client_outgoing_cb : nullptr);
+        esp_hf_client_register_data_callback(speaker.p_speaker ? bt_app_hf_client_incoming_cb_wrapper : nullptr, bt_app_hf_client_outgoing_cb);
 
         const uint32_t rate = param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC ? 16000 : 8000;
         if (!start_microphone(rate))

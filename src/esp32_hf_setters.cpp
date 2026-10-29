@@ -64,7 +64,7 @@ I2SClass* EspHf::setupSpeaker(int8_t bclk, int8_t ws, int8_t dout, int8_t din, i
         return NULL;
     }
     // Internally we just use to pointer so its more handy.
-    _impl->p_speaker = &_impl->speaker.speaker;
+    _impl->speaker.p_speaker = &_impl->speaker.speaker;
     return &_impl->speaker.speaker;
 }
 

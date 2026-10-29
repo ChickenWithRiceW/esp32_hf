@@ -129,6 +129,8 @@ public:
      */
     bool rejectIncomingCall(void);
 
+    bool callNumber(char *phone_number);
+
     // --- Getters
     e_state getState(void);
 

@@ -60,6 +60,9 @@ void EspHf::Impl::call(const char* phone_number, bool is_simcard_call, void (*fn
 {
     static t_call arg;
 
+    if (!fn)
+        return;
+
     arg.fn = fn;
     arg.is_simcard_call = is_simcard_call;
 
