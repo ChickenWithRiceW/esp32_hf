@@ -26,8 +26,9 @@ constexpr uint8_t kNumCols = 4;
 
 // Pins exposed on the ESP-WROOM-32 board. These avoid the project's speaker
 // pins (5, 25, 26), analog mic pin (34), and optional I2S mic pins (14, 27, 32).
-constexpr uint8_t kRowPins[kNumRows] = {18, 19, 21, 22};
-constexpr uint8_t kColPins[kNumCols] = {4, 13, 16, 17};
+constexpr uint8_t kRowPins[kNumRows] = {23, 22, 21, 19};
+constexpr uint8_t kColPins[kNumCols] = {18, 17, 16, 4};
+constexpr uint8_t kBuzzerPin = 33;
 
 constexpr char kKeys[kNumRows][kNumCols] = {
     {'1', '2', '3', 'K'},
@@ -36,8 +37,6 @@ constexpr char kKeys[kNumRows][kNumCols] = {
     {'*', '0', '#', 'R'},
 };
 
-// Buzzer pin (free: not used by keypad, speaker, or mics).
-constexpr uint8_t kBuzzerPin = 23;
 
 // Standard DTMF frequencies. Row 0-3 and column 0-3 line up with kKeys, so the
 // 4th column (K, S, W, R) gets the "A, B, C, D" tones.

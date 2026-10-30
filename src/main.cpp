@@ -1,3 +1,4 @@
+#include "esp32-hal.h"
 #include "keypad_matrix.h"
 #include <Arduino.h>
 #include "esp32_hf.hpp"
@@ -8,21 +9,21 @@
 #define SPEAKER_BCLK 5
 
 EspHf& hf = EspHf::getInstance();
-constexpr uint8_t kLeverPin = 12;
+constexpr uint8_t kLeverPin = 13;
 bool lastLever = false;
 
 void setup() {
   Serial.begin(115200);
   KeypadMatrix::begin();
-  pinMode(kLeverPin, INPUT_PULLDOWN);
-  delay(10);
-  lastLever = (digitalRead(kLeverPin) == HIGH);
-
+  
   // Mandatory setup.
   hf.setDeviceName("ESP-HF 42");
   hf.setLegacyPin("0000");
-
+  
   hf.setupSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DOUT);
+  pinMode(kLeverPin, INPUT_PULLUP);
+  delay(10);
+  lastLever = (digitalRead(kLeverPin) == LOW);
   hf.begin();
 }
 
@@ -62,6 +63,6 @@ void loop() {
     hf.rejectIncomingCall();
   }
   lastLever = lever;
-
+  delayMicroseconds(500);
 
 }
