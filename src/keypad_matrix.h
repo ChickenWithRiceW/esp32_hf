@@ -27,7 +27,9 @@ constexpr uint8_t kNumCols = 4;
 // Pins exposed on the ESP-WROOM-32 board. These avoid the project's speaker
 // pins (5, 25, 26), analog mic pin (34), and optional I2S mic pins (14, 27, 32).
 constexpr uint8_t kRowPins[kNumRows] = {23, 22, 21, 19};
+
 constexpr uint8_t kColPins[kNumCols] = {18, 17, 16, 4};
+
 constexpr uint8_t kBuzzerPin = 33;
 
 constexpr char kKeys[kNumRows][kNumCols] = {
@@ -175,8 +177,7 @@ inline char scanRaw() {
       }
     }
 
-    // Return the row to high-impedance so idle rows never fight the active one.
-    pinMode(kRowPins[row], INPUT);
+    digitalWrite(kRowPins[row], HIGH);  // instead of pinMode(INPUT)
 
     if (found != '\0') break;
   }
@@ -189,7 +190,8 @@ inline void begin() {
     pinMode(kColPins[i], INPUT_PULLUP);
   }
   for (uint8_t i = 0; i < kNumRows; ++i) {
-    pinMode(kRowPins[i], INPUT);  // high-Z until scanned
+    pinMode(kRowPins[i], OUTPUT);     // was INPUT
+    digitalWrite(kRowPins[i], HIGH);  // idle HIGH
   }
   pinMode(kBuzzerPin, OUTPUT);
   digitalWrite(kBuzzerPin, LOW);
@@ -200,12 +202,19 @@ inline void begin() {
 // repeated; it is reported again only after being released and pressed again.
 // Non-blocking: call it every loop().
 inline char getKeyPressed() {
-  static char lastRaw = '\0';     // most recent raw reading
-  static char reported = '\0';    // key already reported and still held
-  static uint32_t changedAt = 0;  // when the raw reading last changed
+  static char lastRaw = '\0';
+  static char reported = '\0';
+  static uint32_t changedAt = 0;
+  static uint32_t lastScan = 0;
+
+  const uint32_t now = millis();
+  if (now - lastScan < 10) {      // scan every 10 ms only
+    updateSound();
+    return '\0';
+  }
+  lastScan = now;
 
   const char raw = scanRaw();
-  const uint32_t now = millis();
   char result = '\0';
 
   if (raw != lastRaw) {

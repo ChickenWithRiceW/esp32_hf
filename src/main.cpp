@@ -5,8 +5,8 @@
 
 // For speaker example.
 #define SPEAKER_LRC_WS 25
-#define SPEAKER_DOUT 26
-#define SPEAKER_BCLK 5
+#define SPEAKER_DOUT 27
+#define SPEAKER_BCLK 26
 
 EspHf& hf = EspHf::getInstance();
 constexpr uint8_t kLeverPin = 13;
@@ -21,9 +21,9 @@ void setup() {
   hf.setLegacyPin("0000");
   
   hf.setupSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DOUT);
-  pinMode(kLeverPin, INPUT_PULLUP);
+  // pinMode(kLeverPin, INPUT_PULLUP);
   delay(10);
-  lastLever = (digitalRead(kLeverPin) == LOW);
+  // lastLever = (digitalRead(kLeverPin) == LOW);
   hf.begin();
 }
 
@@ -49,20 +49,20 @@ void loop() {
     }
   }
 
-  bool lever = (digitalRead(kLeverPin) == LOW);
-  if (lever && !lastLever) {
-    // KeypadMatrix::playBeep(500, 100);        // lever beep through the same buzzer
-    if (!phone_number[0])
-      hf.acceptIncomingCall();
-    else
-      hf.callNumber(phone_number);
-  }
-  if (!lever && lastLever)
-  {
-    Serial.println("Reject");
-    hf.rejectIncomingCall();
-  }
-  lastLever = lever;
-  delayMicroseconds(500);
+  // bool lever = (digitalRead(kLeverPin) == LOW);
+  // if (lever && !lastLever) {
+  //   // KeypadMatrix::playBeep(500, 100);        // lever beep through the same buzzer
+  //   if (!phone_number[0])
+  //     hf.acceptIncomingCall();
+  //   else
+  //     hf.callNumber(phone_number);
+  // }
+  // if (!lever && lastLever)
+  // {
+  //   Serial.println("Reject");
+  //   hf.rejectIncomingCall();
+  // }
+  // lastLever = lever;
+  // delayMicroseconds(500);
 
 }
