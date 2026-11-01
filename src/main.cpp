@@ -1,9 +1,14 @@
+// Hardware test sketch for developing the library. Only built when ESP32_HF_DEV_SKETCH is
+// defined (see platformio.ini), so it does not end up inside projects that use the library.
+#ifdef ESP32_HF_DEV_SKETCH
+
 #include "esp32_hf.hpp"
 #include <Arduino.h>
 
 // Hardware test sketch. Open the serial monitor (115200) and type a command:
-//   a = accept call      r = reject / hang up      s = print state
-//   d = dial TEST_NUMBER h = help
+//   a = accept   r = reject   e = end call   d = dial TEST_NUMBER   l = redial
+//   + / - = volume up / down   m = mute mic on/off   t = move audio to ESP / back to phone
+//   i = info (battery, signal, network, phone name, volume)   s = state   h = help
 // State changes and heap usage are also printed automatically.
 
 // For speaker example.
@@ -72,9 +77,24 @@ void sspAuth(char* code) { Serial.printf("[BT] SSP code: %s\n", code); }
 
 void legacyAuth(void) { Serial.println("[BT] Legacy PIN requested"); }
 
+void callActive(void) { Serial.println("[CALL] Active"); }
+
+void callEnded(void) { Serial.println("[CALL] Ended"); }
+
+void audioOn(void) { Serial.println("[AUDIO] Connected"); }
+
+void audioOff(void) { Serial.println("[AUDIO] Disconnected"); }
+
+void printInfo()
+{
+    Serial.printf("[INFO] connected=%d phone='%s' battery=%d signal=%d network=%d volume=%d\n",
+        hf.isConnected(), hf.getPeerName(), hf.getBatteryLevel(), hf.getSignalStrength(),
+        hf.isNetworkAvailable(), hf.getVolume());
+}
+
 void printHelp()
 {
-    Serial.printf("Commands: a=accept  r=reject/hang up  d=dial %s  s=state  h=help\n", TEST_NUMBER);
+    Serial.printf("Commands: a=accept r=reject e=end d=dial(%s) l=redial +/-=volume m=mute t=audio i=info s=state h=help\n", TEST_NUMBER);
 }
 
 void setup()
@@ -105,6 +125,11 @@ void setup()
     hf.setCbSspAuth(sspAuth);
     hf.setCbLegacyAuth(legacyAuth);
 
+    hf.setCbCallActive(callActive);
+    hf.setCbCallEnded(callEnded);
+    hf.setCbAudioConnected(audioOn);
+    hf.setCbAudioDisconnected(audioOff);
+
     // Start Hf after setup.
     Serial.printf("begin() returned %d\n", hf.begin());
     printHelp();
@@ -114,6 +139,8 @@ void loop()
 {
     static e_state last_state = (e_state)-1;
     static uint32_t last_heap_print = 0;
+    static bool muted = false;
+    static bool audio_on_esp = true;
 
     // Print every state change (also shows the initial state).
     e_state state = hf.getState();
@@ -140,6 +167,30 @@ void loop()
         case 'd':
             Serial.printf("dial -> %d\n", hf.callNumber(TEST_NUMBER));
             break;
+        case 'e':
+            Serial.printf("end call -> %d\n", hf.endCall());
+            break;
+        case 'l':
+            Serial.printf("redial -> %d\n", hf.redial());
+            break;
+        case '+':
+        case '-': {
+            int volume = constrain(hf.getVolume() + (c == '+' ? 1 : -1), 0, 15);
+            Serial.printf("volume %d -> %d\n", volume, hf.setVolume(volume));
+            break;
+        }
+        case 'm':
+            muted = !muted;
+            Serial.printf("mic mute %d -> %d\n", muted, hf.setMicMute(muted));
+            break;
+        case 't':
+            // Moves the call audio away from / back to the ESP32.
+            Serial.printf("audio %s -> %d\n", audio_on_esp ? "to phone" : "to ESP", audio_on_esp ? hf.disconnectAudio() : hf.connectAudio());
+            audio_on_esp = !audio_on_esp;
+            break;
+        case 'i':
+            printInfo();
+            break;
         case 's':
             Serial.printf("[STATE] %s (%d)\n", stateName(state), state);
             break;
@@ -150,3 +201,5 @@ void loop()
     }
     delay(50);
 }
+
+#endif // ESP32_HF_DEV_SKETCH

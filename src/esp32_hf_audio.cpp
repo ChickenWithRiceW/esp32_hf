@@ -35,14 +35,17 @@ static struct {
     size_t frame_bytes = MSBC_FRAME_BYTES; // Frame size of the current call.
     uint32_t rate = MSBC_RATE; // Sample rate of the current call.
     bool use_i2s = false; // true: I2S microphone, false: ADC.
+    volatile bool muted = false; // Send silence instead of the recording.
     I2SClass* i2s = nullptr;
     adc_continuous_handle_t adc = nullptr;
     adc_continuous_data_t adc_samples[ADC_READ_SAMPLES];
 } mic;
 
 // Hand a finished frame to the Bluetooth stack. A full queue drops the frame.
-static void queue_mic_frame(const int16_t* frame)
+static void queue_mic_frame(int16_t* frame)
 {
+    if (mic.muted)
+        memset(frame, 0, mic.frame_bytes);
     if (xQueueSend(mic.frames, frame, 0) == pdTRUE)
         esp_hf_client_outgoing_data_ready();
 }
@@ -253,16 +256,40 @@ void EspHf::Impl::audio_change(esp_hf_client_cb_param_t* param)
     const auto audio_state = param->audio_stat.state;
 
     if (audio_state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED || audio_state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-        esp_hf_client_register_data_callback(speaker.p_speaker ? bt_app_hf_client_incoming_cb_wrapper : nullptr, bt_app_hf_client_outgoing_cb);
-
+        // The call decides the sample rate: 16 kHz for mSBC, 8 kHz for CVSD.
         const uint32_t rate = (audio_state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) ? MSBC_RATE : CVSD_RATE;
+
+        // Set the speaker to the same rate, otherwise 8 kHz audio would play at double speed.
+        // Does nothing if the speaker already runs at this rate.
+        if (speaker.p_speaker && !speaker.p_speaker->configureTX(rate, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO))
+            ESP_LOGW(BT_HF_TAG, "Could not set the speaker to %u Hz", (unsigned)rate);
+
+        esp_hf_client_register_data_callback(speaker.p_speaker ? bt_app_hf_client_incoming_cb_wrapper : nullptr, bt_app_hf_client_outgoing_cb);
         if (!start_microphone(rate))
             ESP_LOGE(BT_HF_TAG, "HFP audio connected without microphone capture");
-        _info.state = IN_CALL;
+        if (!audio_active) {
+            audio_active = true;
+            run_cb(callbacks.cb_audio_connected);
+        }
     } else if (audio_state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
-        _info.state = IDLE_CONNECTED;
-        stop_microphone();
+        audio_stopped();
     }
+}
+
+// Call audio ended. Also called when the phone disconnects, in case the stack
+// did not report the audio ending first.
+void EspHf::Impl::audio_stopped(void)
+{
+    stop_microphone();
+    if (audio_active) {
+        audio_active = false;
+        run_cb(callbacks.cb_audio_disconnected);
+    }
+}
+
+void EspHf::Impl::set_mic_mute(bool mute)
+{
+    mic.muted = mute;
 }
 
 

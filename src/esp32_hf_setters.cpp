@@ -200,3 +200,43 @@ bool EspHf::setCbBtDisconnected(void (*ptr)(void))
     _impl->callbacks.cb_bt_disconnected = ptr;
     return true;
 }
+
+bool EspHf::setCbCallActive(void (*ptr)(void))
+{
+    if (!ptr) {
+        ESP_LOGE(BT_HF_TAG, "Call active callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_call_active = ptr;
+    return true;
+}
+
+bool EspHf::setCbCallEnded(void (*ptr)(void))
+{
+    if (!ptr) {
+        ESP_LOGE(BT_HF_TAG, "Call ended callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_call_ended = ptr;
+    return true;
+}
+
+bool EspHf::setCbAudioConnected(void (*ptr)(void))
+{
+    if (!ptr) {
+        ESP_LOGE(BT_HF_TAG, "Audio connected callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_audio_connected = ptr;
+    return true;
+}
+
+bool EspHf::setCbAudioDisconnected(void (*ptr)(void))
+{
+    if (!ptr) {
+        ESP_LOGE(BT_HF_TAG, "Audio disconnected callback can't be nullptr.");
+        return false;
+    }
+    _impl->callbacks.cb_audio_disconnected = ptr;
+    return true;
+}

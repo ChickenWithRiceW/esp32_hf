@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 946" width="820" height="946" font-family="DejaVu Sans, Verdana, Arial, sans-serif">
+<rect x="1" y="1" width="818" height="944" rx="10" fill="#ffffff" stroke="#b0bec5"/>
+<text x="410.0" y="34" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">Complete phone kit (CompletePhoneKit example)</text>
+<line x1="160" y1="120" x2="420" y2="120" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="180" x2="420" y2="180" stroke="#1565c0" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="210" x2="420" y2="210" stroke="#2e7d32" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="240" x2="420" y2="240" stroke="#ef6c00" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="580" y1="120" x2="660" y2="120" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="580" y1="150" x2="660" y2="150" stroke="#222222" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="330" x2="420" y2="330" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="390" x2="420" y2="390" stroke="#6a1b9a" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="480" x2="420" y2="480" stroke="#1565c0" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="510" x2="420" y2="510" stroke="#d32f2f" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="540" x2="420" y2="540" stroke="#2e7d32" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="570" x2="420" y2="570" stroke="#00838f" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="600" x2="420" y2="600" stroke="#6d4c41" stroke-width="3.5" stroke-linecap="round"/>
+<line x1="160" y1="720" x2="420" y2="720" stroke="#ef6c00" stroke-width="3.5" stroke-linecap="round"/>
+<rect x="30" y="70" width="130" height="764" rx="9" fill="#eceff1" stroke="#455a64" stroke-width="2"/>
+<text x="95.0" y="94" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">ESP32</text>
+<text x="95.0" y="109" text-anchor="middle" font-size="10" fill="#546e7a">DevKit, only the pins used</text>
+<circle cx="160" cy="120" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="124" text-anchor="end" font-size="12.5" fill="#222">5V (VIN)</text>
+<circle cx="160" cy="180" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="184" text-anchor="end" font-size="12.5" fill="#222">GPIO 5</text>
+<circle cx="160" cy="210" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="214" text-anchor="end" font-size="12.5" fill="#222">GPIO 25</text>
+<circle cx="160" cy="240" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="244" text-anchor="end" font-size="12.5" fill="#222">GPIO 26</text>
+<circle cx="160" cy="330" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="334" text-anchor="end" font-size="12.5" fill="#222">3V3</text>
+<circle cx="160" cy="390" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="394" text-anchor="end" font-size="12.5" fill="#222">GPIO 34</text>
+<circle cx="160" cy="480" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="484" text-anchor="end" font-size="12.5" fill="#222">GPIO 18</text>
+<circle cx="160" cy="510" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="514" text-anchor="end" font-size="12.5" fill="#222">GPIO 19</text>
+<circle cx="160" cy="540" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="544" text-anchor="end" font-size="12.5" fill="#222">GPIO 21</text>
+<circle cx="160" cy="570" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="574" text-anchor="end" font-size="12.5" fill="#222">GPIO 22</text>
+<circle cx="160" cy="600" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="604" text-anchor="end" font-size="12.5" fill="#222">GPIO 23</text>
+<circle cx="160" cy="720" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="724" text-anchor="end" font-size="12.5" fill="#222">GPIO 4</text>
+<line x1="160" y1="810" x2="176" y2="810" stroke="#222222" stroke-width="3" stroke-linecap="round"/>
+<line x1="176" y1="810" x2="176" y2="819" stroke="#222222" stroke-width="3"/>
+<line x1="167.0" y1="819" x2="185.0" y2="819" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="170.0" y1="823" x2="182.0" y2="823" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="173.0" y1="827" x2="179.0" y2="827" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="160" cy="810" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="150" y="814" text-anchor="end" font-size="12.5" fill="#222">GND</text>
+<rect x="420" y="70" width="160" height="194" rx="9" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+<text x="500.0" y="94" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">MAX98357A</text>
+<text x="500.0" y="109" text-anchor="middle" font-size="10" fill="#546e7a">I2S amplifier</text>
+<circle cx="420" cy="120" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="124" text-anchor="start" font-size="12.5" fill="#222">VIN</text>
+<line x1="420" y1="150" x2="404" y2="150" stroke="#222222" stroke-width="3" stroke-linecap="round"/>
+<line x1="404" y1="150" x2="404" y2="159" stroke="#222222" stroke-width="3"/>
+<line x1="395.0" y1="159" x2="413.0" y2="159" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="398.0" y1="163" x2="410.0" y2="163" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="401.0" y1="167" x2="407.0" y2="167" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="420" cy="150" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="154" text-anchor="start" font-size="12.5" fill="#222">GND</text>
+<circle cx="420" cy="180" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="184" text-anchor="start" font-size="12.5" fill="#222">BCLK</text>
+<circle cx="420" cy="210" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="214" text-anchor="start" font-size="12.5" fill="#222">LRC</text>
+<circle cx="420" cy="240" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="244" text-anchor="start" font-size="12.5" fill="#222">DIN</text>
+<circle cx="580" cy="120" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="570" y="124" text-anchor="end" font-size="12.5" fill="#222">SPK +</text>
+<circle cx="580" cy="150" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="570" y="154" text-anchor="end" font-size="12.5" fill="#222">SPK -</text>
+<rect x="660" y="70" width="100" height="104" rx="9" fill="#fff8e1" stroke="#f9a825" stroke-width="2"/>
+<text x="710.0" y="94" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">Speaker</text>
+<text x="710.0" y="109" text-anchor="middle" font-size="10" fill="#546e7a">4 to 8 ohm</text>
+<circle cx="660" cy="120" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="670" y="124" text-anchor="start" font-size="12.5" fill="#222">+</text>
+<circle cx="660" cy="150" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="670" y="154" text-anchor="start" font-size="12.5" fill="#222">-</text>
+<rect x="420" y="280" width="160" height="134" rx="9" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+<text x="500.0" y="304" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">Analog mic board</text>
+<text x="500.0" y="319" text-anchor="middle" font-size="10" fill="#546e7a">amplified</text>
+<circle cx="420" cy="330" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="334" text-anchor="start" font-size="12.5" fill="#222">VCC</text>
+<line x1="420" y1="360" x2="404" y2="360" stroke="#222222" stroke-width="3" stroke-linecap="round"/>
+<line x1="404" y1="360" x2="404" y2="369" stroke="#222222" stroke-width="3"/>
+<line x1="395.0" y1="369" x2="413.0" y2="369" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="398.0" y1="373" x2="410.0" y2="373" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="401.0" y1="377" x2="407.0" y2="377" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="420" cy="360" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="364" text-anchor="start" font-size="12.5" fill="#222">GND</text>
+<circle cx="420" cy="390" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="394" text-anchor="start" font-size="12.5" fill="#222">OUT</text>
+<rect x="420" y="430" width="160" height="224" rx="9" fill="#e3f2fd" stroke="#1565c0" stroke-width="2"/>
+<text x="500.0" y="454" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">5 push buttons</text>
+<text x="500.0" y="469" text-anchor="middle" font-size="10" fill="#546e7a">one leg each to its pin</text>
+<circle cx="420" cy="480" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="484" text-anchor="start" font-size="12.5" fill="#222">ANSWER</text>
+<circle cx="420" cy="510" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="514" text-anchor="start" font-size="12.5" fill="#222">REJECT</text>
+<circle cx="420" cy="540" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="544" text-anchor="start" font-size="12.5" fill="#222">VOL +</text>
+<circle cx="420" cy="570" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="574" text-anchor="start" font-size="12.5" fill="#222">VOL -</text>
+<circle cx="420" cy="600" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="604" text-anchor="start" font-size="12.5" fill="#222">MUTE</text>
+<line x1="420" y1="630" x2="404" y2="630" stroke="#222222" stroke-width="3" stroke-linecap="round"/>
+<line x1="404" y1="630" x2="404" y2="639" stroke="#222222" stroke-width="3"/>
+<line x1="395.0" y1="639" x2="413.0" y2="639" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="398.0" y1="643" x2="410.0" y2="643" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="401.0" y1="647" x2="407.0" y2="647" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="420" cy="630" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="634" text-anchor="start" font-size="12.5" fill="#222">other legs</text>
+<rect x="420" y="670" width="200" height="104" rx="9" fill="#fce4ec" stroke="#c2185b" stroke-width="2"/>
+<text x="520.0" y="694" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">Status LED + 220 ohm</text>
+<text x="520.0" y="709" text-anchor="middle" font-size="10" fill="#546e7a">resistor to GPIO 4</text>
+<circle cx="420" cy="720" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="724" text-anchor="start" font-size="12.5" fill="#222">resistor</text>
+<line x1="420" y1="750" x2="404" y2="750" stroke="#222222" stroke-width="3" stroke-linecap="round"/>
+<line x1="404" y1="750" x2="404" y2="759" stroke="#222222" stroke-width="3"/>
+<line x1="395.0" y1="759" x2="413.0" y2="759" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="398.0" y1="763" x2="410.0" y2="763" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<line x1="401.0" y1="767" x2="407.0" y2="767" stroke="#222222" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="420" cy="750" r="4.5" fill="#fff" stroke="#222" stroke-width="2"/>
+<text x="430" y="754" text-anchor="start" font-size="12.5" fill="#222">cathode</text>
+<text x="26" y="858" font-size="12.5" fill="#37474f">All ground symbols connect to the ESP32 GND pins (use a shared ground rail).</text>
+<text x="26" y="877" font-size="12.5" fill="#37474f">Each push button connects its GPIO pin to GND. The sketch turns on the internal pull-ups.</text>
+<text x="26" y="896" font-size="12.5" fill="#37474f">LED: GPIO 4 -&gt; 220 ohm resistor -&gt; LED anode, LED cathode -&gt; GND.</text>
+<text x="26" y="915" font-size="12.5" fill="#37474f">Prefer an I2S microphone? Use the INMP441 diagram instead (GPIO 14, 27 and 32).</text>
+</svg>

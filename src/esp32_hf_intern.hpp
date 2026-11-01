@@ -26,6 +26,7 @@ extern "C" {
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/timers.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
@@ -43,6 +44,9 @@ static constexpr uint32_t TASK_SIZE = 4096;
 
 // Speaker volume range used by the phone: 0 (quiet) to 15 (loud).
 static constexpr int VOLUME_MAX = 15;
+
+// While no phone is connected, a connection to a bonded phone is tried this often.
+static constexpr uint32_t RECONNECT_INTERVAL_MS = 5000;
 
 // Used at the start of public functions. Reject the call (return false) depending on
 // whether begin() has run: setters need it NOT to, actions need it to.
@@ -113,14 +117,14 @@ struct t_microphone {
 
 // Live information about the phone connection.
 struct t_info {
-    int battery_level = 0;   // As reported by the phone (0-5).
-    int signal_strength = 0; // As reported by the phone (0-5).
+    int battery_level = -1;   // As reported by the phone (0-5), -1 if not reported.
+    int signal_strength = -1; // As reported by the phone (0-5), -1 if not reported.
     // Speaker volume 0-15. The phone only reports it when it changes, so the last
     // value is saved in flash. VOLUME_MAX (no attenuation) is used until one has been saved.
     int volume = VOLUME_MAX;
     e_state state = IDLE_DISCONNECTED;
     bool network_available = false; // Phone has cellular service.
-    bool connected = false;         // Phone is connected.
+    bool connected = false;         // Phone is connected and ready (service level connection).
     char device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1] = {}; // Name of the paired phone.
 };
 
@@ -135,6 +139,11 @@ struct t_callbacks {
     void (*cb_bt_ssp_auth)(char ssp_pin[7]) = nullptr;
     void (*cb_bt_legacy_pin)(void) = nullptr;
 
+    void (*cb_call_active)(void) = nullptr;
+    void (*cb_call_ended)(void) = nullptr;
+    void (*cb_audio_connected)(void) = nullptr;
+    void (*cb_audio_disconnected)(void) = nullptr;
+
     void (*cb_incoming_call)(char phone_number[15], bool sim_call) = nullptr;
     void (*cb_outgoing_call)(char phone_number[15], bool sim_call) = nullptr;
 };
@@ -147,9 +156,18 @@ struct EspHf::Impl {
     t_callbacks callbacks;
     t_info _info;
 
-    esp_bd_addr_t peer_addr;      // Address of the last connected phone.
-    bool already_run = false;     // Bonded phone connect was already attempted.
-    bool initialised = false;     // begin() finished successfully.
+    esp_bd_addr_t peer_addr;  // Address of the phone we are, or were last, connected to.
+    bool initialised = false; // begin() was called and the stacks are running.
+
+    // --- Connection handling
+    TimerHandle_t reconnect_timer = nullptr;
+    int next_bonded = 0; // Which bonded phone to try next, so a missing phone does not block the others.
+    esp_hf_client_connection_state_t link_state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
+
+    // --- Call tracking. The public state is worked out from these (see update_state()).
+    bool call_active = false;                                            // A call is in progress.
+    esp_hf_call_setup_status_t call_setup = ESP_HF_CALL_SETUP_STATUS_IDLE; // Ringing or dialing.
+    bool audio_active = false;                                           // Call audio is connected.
 
     // Set when the phone signals a call from another app (not a SIM call), so the next
     // call event is treated as incoming. The Bluetooth stack does not tell us directly.
@@ -160,6 +178,7 @@ struct EspHf::Impl {
     bool validate_config(void);
     static bool isStrPrintable(const char* str);
     static bool init_controller_and_bluetooth(bool ssp_enabled);
+    static void shutdown_bluetooth(void); // Undo startup, used when begin() fails.
     static bool setup_bt_gap(const char* device_name, bool ssp_enabled, const char* legacy_pairing_pin);
 
     // --- Pairing and discovery events (hf_gap)
@@ -170,12 +189,17 @@ struct EspHf::Impl {
     // --- Hands-free events: connection, calls, indicators (hf_app)
     void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t* param);
     void connection_change(const esp_hf_client_cb_param_t* param);
+    void update_state(void);  // Work out _info.state from the connection and call tracking.
+    void try_reconnect(void); // Connect to the next bonded phone if none is connected.
+    static void reconnect_timer_cb(TimerHandle_t timer);
     void call_event(char* phone_number, esp_hf_current_call_direction_t dir);
     // Start a task that runs a call callback with its own copy of the arguments.
     void call(const char* phone_number, bool is_simcard_call, void (*fn)(char*, bool));
 
     // --- Audio (esp32_hf_audio.cpp)
     void audio_change(esp_hf_client_cb_param_t* param);
+    void audio_stopped(void); // Call audio ended (or the phone disconnected).
+    void set_mic_mute(bool mute);
     void bt_app_hf_client_incoming_cb(const uint8_t* buf, uint32_t sz); // Phone audio -> speaker.
     bool start_microphone(uint32_t sample_rate);
     void load_volume(void);
@@ -187,7 +211,8 @@ struct EspHf::Impl {
     static void bt_app_hf_client_incoming_cb_wrapper(const uint8_t* buf, uint32_t sz);
 
     // --- Task entry points that run user callbacks (esp32_hf_callback_wrapper.cpp).
-    static void wrap(void* ptr);          // Callback without arguments.
+    static void run_cb(void (*fn)(void)); // Start a task running a callback without arguments.
+    static void wrap(void* ptr);          // Task entry for run_cb().
     static void call_wrap(void* ptr);     // Call callback. Frees the t_call.
     static void ssp_auth_wrap(void* ptr); // Pairing code callback. Frees the t_auth.
 };

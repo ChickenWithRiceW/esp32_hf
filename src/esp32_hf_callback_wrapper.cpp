@@ -1,5 +1,11 @@
 #include "esp32_hf_intern.hpp"
 
+void EspHf::Impl::run_cb(void (*fn)(void))
+{
+    if (fn)
+        xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)fn, 1, nullptr, 1);
+}
+
 void EspHf::Impl::wrap(void* ptr)
 {
     reinterpret_cast<void (*)()>(ptr)();

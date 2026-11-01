@@ -43,21 +43,53 @@ const char* c_volume_control_target_str[] = {
     "MICROPHONE"
 };
 
+// Work out the public state. It follows the phone's call indicators, so it stays
+// correct whether or not call audio is connected.
+void EspHf::Impl::update_state(void)
+{
+    if (!_info.connected)
+        _info.state = IDLE_DISCONNECTED;
+    else if (call_setup == ESP_HF_CALL_SETUP_STATUS_INCOMING)
+        _info.state = INCOMING_CALL;
+    else if (call_setup == ESP_HF_CALL_SETUP_STATUS_OUTGOING_DIALING || call_setup == ESP_HF_CALL_SETUP_STATUS_OUTGOING_ALERTING)
+        _info.state = OUTGOING_CALL;
+    else if (call_active)
+        _info.state = IN_CALL;
+    else
+        _info.state = IDLE_CONNECTED;
+}
+
 void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t* param)
 {
-    if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _info.connected) {
-        _info.connected = false;
-        _info.state = IDLE_DISCONNECTED;
-        esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
-        if (callbacks.cb_bt_disconnected)
-            xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_disconnected, 1, nullptr, 1);
-    } else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_info.connected) {
-        _info.connected = true;
-        _info.state = IDLE_CONNECTED;
-        if (callbacks.cb_bt_connected)
-            xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_connected, 1, nullptr, 1);
-    }
+    const esp_hf_client_connection_state_t state = param->conn_stat.state;
+
+    link_state = state;
     memcpy(peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
+
+    // The phone is ready once the service level connection is up (the earlier
+    // CONNECTED state is only the raw link). Commands only work from here on.
+    if (state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED && !_info.connected) {
+        _info.connected = true;
+        update_state();
+        esp_bt_gap_read_remote_name(peer_addr);
+        run_cb(callbacks.cb_bt_connected);
+    } else if (state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
+        // Also happens when a connection attempt fails. Forget everything about the phone.
+        const bool was_connected = _info.connected;
+        _info.connected = false;
+        _info.battery_level = -1;
+        _info.signal_strength = -1;
+        _info.network_available = false;
+        _info.device_name[0] = '\0';
+        call_active = false;
+        call_setup = ESP_HF_CALL_SETUP_STATUS_IDLE;
+        incoming_call = false;
+        audio_stopped();
+        update_state();
+        // The reconnect timer tries again by itself.
+        if (was_connected)
+            run_cb(callbacks.cb_bt_disconnected);
+    }
 }
 
 void EspHf::Impl::call(const char* phone_number, bool is_simcard_call, void (*fn)(char*, bool))
@@ -86,10 +118,8 @@ void EspHf::Impl::call_event(char* phone_number, esp_hf_current_call_direction_t
     bool has_phone_number = (phone_number && strcmp(phone_number, NO_SIMCARD_CALL_NUMBER) != 0);
 
     if (dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || incoming_call) {
-        _info.state = INCOMING_CALL;
         call(phone_number, has_phone_number, callbacks.cb_incoming_call);
     } else {
-        _info.state = OUTGOING_CALL;
         call(phone_number, has_phone_number, callbacks.cb_outgoing_call);
     }
     incoming_call = false;
@@ -136,8 +166,14 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
     // Will be called in ingoing and outgoing for other apps.
     case ESP_HF_CLIENT_CIND_CALL_EVT: {
         ESP_LOGI(BT_HF_TAG, "incoming call from other apps: %d", param->call.status);
-        if (param->call.status == ESP_HF_CALL_STATUS_CALL_IN_PROGRESS)
+        const bool active = (param->call.status == ESP_HF_CALL_STATUS_CALL_IN_PROGRESS);
+        if (active)
             incoming_call = true;
+        if (active != call_active) {
+            call_active = active;
+            run_cb(active ? callbacks.cb_call_active : callbacks.cb_call_ended);
+        }
+        update_state();
         break;
     }
 
@@ -150,8 +186,8 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
             esp_hf_client_query_current_calls();
         else
             incoming_call = false;
-        if (param->call_setup.status == ESP_HF_CALL_SETUP_STATUS_IDLE)
-            _info.state = IDLE_CONNECTED;
+        call_setup = param->call_setup.status;
+        update_state();
         break;
     }
 

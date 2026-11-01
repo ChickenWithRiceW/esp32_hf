@@ -24,7 +24,7 @@
 enum e_state {
     IDLE_DISCONNECTED = 0, ///< No phone connected.
     IDLE_CONNECTED,        ///< Phone connected, no call.
-    IN_CALL,               ///< Call audio is connected.
+    IN_CALL,               ///< A call is active.
     INCOMING_CALL,         ///< Phone is ringing.
     OUTGOING_CALL,         ///< A call is being placed.
 };
@@ -86,7 +86,7 @@ public:
      * @brief Use an I2S object you have set up yourself as the speaker.
      *
      * The object must already be started with setPins() and begin(). It receives
-     * 16-bit mono audio. If you also use a microphone, the speaker must not use I2S port 0 (the microphone needs it).
+     * 16-bit mono audio, and the library changes its sample rate to match each call (8 or 16 kHz). If you also use a microphone, the speaker must not use I2S port 0 (the microphone needs it).
      * @param speaker Pointer to the I2S object. It must stay valid while the library runs.
      * @return True on success, false on an invalid object, port conflict or if begin() was called.
      */
@@ -95,7 +95,7 @@ public:
     /**
      * @brief Let the library set up the speaker on I2S port 1 for you.
      *
-     * Runs at 16 kHz, 16-bit mono (the rate of wide-band calls).
+     * 16-bit mono. Starts at 16 kHz and is switched to 8 kHz for narrow-band calls.
      * @param bclk Bit clock pin.
      * @param ws Word select (left/right clock) pin.
      * @param dout Data out pin, connect this to your amplifier.
@@ -160,6 +160,15 @@ public:
     /** @brief Called when the phone disconnects. */
     bool setCbBtDisconnected(void (*ptr)(void));
 
+    /** @brief Called when a call becomes active (answered, or the other side picked up). */
+    bool setCbCallActive(void (*ptr)(void));
+    /** @brief Called when an active call ends. Not called for rejected or missed calls. */
+    bool setCbCallEnded(void (*ptr)(void));
+    /** @brief Called when call audio starts (the speaker and microphone are in use). */
+    bool setCbAudioConnected(void (*ptr)(void));
+    /** @brief Called when call audio stops. */
+    bool setCbAudioDisconnected(void (*ptr)(void));
+
     /** @brief Called during secure pairing with the 6 digit code, as text, shown on the phone. */
     bool setCbSspAuth(void (*ptr)(char[7]));
     /** @brief Called when a phone asks for the legacy PIN. The PIN is answered automatically. */
@@ -182,6 +191,46 @@ public:
     bool rejectIncomingCall(void);
 
     /**
+     * @brief Hang up the current call. Does the same as rejectIncomingCall(), the name is
+     *        clearer when a call is already running.
+     * @return True if the command was sent, false if begin() was not called.
+     */
+    bool endCall(void);
+
+    /**
+     * @brief Call the last dialed number again.
+     * @return True if the command was sent, false if begin() was not called.
+     */
+    bool redial(void);
+
+    /**
+     * @brief Move call audio to the ESP32 (speaker and microphone). Needs a connected phone.
+     * @return True if the request was sent, false if no phone is connected.
+     */
+    bool connectAudio(void);
+
+    /**
+     * @brief Move call audio back to the phone. Needs a connected phone.
+     * @return True if the request was sent, false if no phone is connected.
+     */
+    bool disconnectAudio(void);
+
+    /**
+     * @brief Set the speaker volume, from 0 (quiet) to 15 (loud).
+     *
+     * Changes the volume of the ESP32 speaker and tells the phone. The value is
+     * remembered after a restart. Works without a phone, then only the ESP32 changes.
+     * @return True on success, false if the volume is out of range or begin() was not called.
+     */
+    bool setVolume(int volume);
+
+    /**
+     * @brief Mute or unmute the microphone during calls. The caller hears silence while muted.
+     *        Stays set until changed. Has no effect when no microphone is configured.
+     */
+    bool setMicMute(bool mute);
+
+    /**
      * @brief Place a call through the phone.
      * @param phone_number Digits (and an optional leading '+'). Must not be empty.
      * @return True if the command was sent, false on an empty number or if begin() was not called.
@@ -194,6 +243,24 @@ public:
 
     /** @brief Current connection and call state. */
     e_state getState(void);
+
+    /** @brief True when a phone is connected and ready. */
+    bool isConnected(void);
+
+    /** @brief Phone battery level 0-5, or -1 if the phone has not reported it. */
+    int getBatteryLevel(void);
+
+    /** @brief Phone signal strength 0-5, or -1 if the phone has not reported it. */
+    int getSignalStrength(void);
+
+    /** @brief True when the phone has mobile network service. */
+    bool isNetworkAvailable(void);
+
+    /** @brief Name of the connected phone. Empty when no phone is connected or the name is not known yet. */
+    const char* getPeerName(void);
+
+    /** @brief Current speaker volume, 0-15. */
+    int getVolume(void);
 
 private:
     EspHf();

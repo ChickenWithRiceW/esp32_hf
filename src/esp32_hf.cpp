@@ -29,34 +29,43 @@ bool EspHf::begin(void)
 
     _impl->load_volume();
 
+    // Bluetooth events can arrive as soon as the stacks are set up, so mark
+    // the library as started first and undo it if the setup fails.
+    _impl->initialised = true;
     if (!_impl->setup_stacks()) {
         ESP_LOGE(BT_HF_TAG, "Stack setup was not successful");
+        _impl->initialised = false;
+        _impl->shutdown_bluetooth();
+        return false;
+    }
+    return true;
+}
+
+// Start flash storage, the Bluetooth controller and the Bluedroid stack.
+// On failure everything that was started is stopped again, so begin() can be retried.
+bool EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled)
+{
+    // NVS stores the Bluetooth pairing keys and calibration data.
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        if (nvs_flash_erase() != ESP_OK) {
+            ESP_LOGE(BT_HF_TAG, "Could not erase flash storage.");
+            return false;
+        }
+        ret = nvs_flash_init();
+    }
+    if (ret != ESP_OK) {
+        ESP_LOGE(BT_HF_TAG, "Could not start flash storage: %s", esp_err_to_name(ret));
         return false;
     }
 
-#if ACOUSTIC_ECHO_CANCELLATION_ENABLE
-    app_gpio_aec_io_cfg();
-#endif
-
-    _impl->initialised = true;
-    return true;
-}
-bool EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled)
-{
-    // Initialize NVS — it is used to store PHY calibration data
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    // Releases bluetooth low energy module, as we do not use it.
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_BLE));
+    // Release the memory of Bluetooth Low Energy, as we do not use it.
+    // This fails on a retry because it was already released, which is fine.
+    ret = esp_bt_controller_mem_release(ESP_BT_MODE_BLE);
+    if (ret != ESP_OK)
+        ESP_LOGW(BT_HF_TAG, "Could not release BLE memory: %s", esp_err_to_name(ret));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
-    // Change bluetooth mode to match desired bluetooth classic.
     bt_cfg.mode = ESP_BT_MODE_CLASSIC_BT;
 
     if ((ret = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
@@ -66,6 +75,7 @@ bool EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled)
 
     if ((ret = esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable controller failed: %s", __func__, esp_err_to_name(ret));
+        shutdown_bluetooth();
         return false;
     }
 
@@ -74,14 +84,33 @@ bool EspHf::Impl::init_controller_and_bluetooth(bool ssp_enabled)
 
     if ((ret = esp_bluedroid_init_with_cfg(&bluedroid_cfg)) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s initialize bluedroid failed: %s", __func__, esp_err_to_name(ret));
+        shutdown_bluetooth();
         return false;
     }
 
     if ((ret = esp_bluedroid_enable()) != ESP_OK) {
         ESP_LOGE(BT_HF_TAG, "%s enable bluedroid failed: %s", __func__, esp_err_to_name(ret));
+        shutdown_bluetooth();
         return false;
     }
     return true;
+}
+
+// Stop everything in reverse order. Each step is allowed to fail, because this is
+// also used when only part of the startup had worked.
+void EspHf::Impl::shutdown_bluetooth(void)
+{
+    Impl& impl = *getInstance()._impl;
+
+    if (impl.reconnect_timer) {
+        xTimerDelete(impl.reconnect_timer, portMAX_DELAY);
+        impl.reconnect_timer = nullptr;
+    }
+    esp_hf_client_deinit();
+    esp_bluedroid_disable();
+    esp_bluedroid_deinit();
+    esp_bt_controller_disable();
+    esp_bt_controller_deinit();
 }
 
 bool EspHf::Impl::setup_stacks(void)
@@ -92,7 +121,13 @@ bool EspHf::Impl::setup_stacks(void)
     ERROR_CHECK(esp_hf_client_register_callback(Impl::bt_app_hf_client_cb_wrapper), "Could not register hf client callback.")
     ERROR_CHECK(esp_hf_client_init(), "Could not initialize hf client.")
 
-    esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
+    // Connect to a bonded phone now, and keep trying while none is connected.
+    reconnect_timer = xTimerCreate("hf_reconnect", pdMS_TO_TICKS(RECONNECT_INTERVAL_MS), pdTRUE, nullptr, reconnect_timer_cb);
+    if (!reconnect_timer || xTimerStart(reconnect_timer, 0) != pdPASS) {
+        ESP_LOGE(BT_HF_TAG, "Could not start the reconnect timer.");
+        return false;
+    }
+    try_reconnect();
     return true;
 }
 

@@ -1,4 +1,3 @@
-#include "Arduino.h"
 #include "esp32_hf_intern.hpp"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
@@ -7,19 +6,34 @@
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP"
 
-static void connect_to_bonded_device()
+// Try the next bonded phone. Called by a timer while no phone is connected, so a phone
+// that is out of range at boot is found later, and several bonded phones take turns.
+void EspHf::Impl::try_reconnect(void)
 {
-    int i = esp_bt_gap_get_bond_device_num();
-    if (i <= 0)
+    // Do nothing if a phone is connected, or a connection is being set up.
+    if (_info.connected || link_state != ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED)
+        return;
+
+    int count = esp_bt_gap_get_bond_device_num();
+    if (count <= 0)
         return;
 
     // The list holds one address per bonded device, so it must be sized for all of them.
-    esp_bd_addr_t* peer_addrs = new (std::nothrow) esp_bd_addr_t[i];
-    if (!peer_addrs)
+    esp_bd_addr_t* bonded = new (std::nothrow) esp_bd_addr_t[count];
+    if (!bonded)
         return;
-    if (esp_bt_gap_get_bond_device_list(&i, peer_addrs) == ESP_OK && i > 0)
-        esp_hf_client_connect(peer_addrs[0]);
-    delete[] peer_addrs;
+    if (esp_bt_gap_get_bond_device_list(&count, bonded) == ESP_OK && count > 0) {
+        next_bonded %= count;
+        esp_hf_client_connect(bonded[next_bonded]);
+        next_bonded++;
+    }
+    delete[] bonded;
+}
+
+void EspHf::Impl::reconnect_timer_cb(TimerHandle_t timer)
+{
+    (void)timer;
+    getInstance()._impl->try_reconnect();
 }
 
 bool EspHf::Impl::setup_bt_gap(const char* device_name, bool ssp_enabled, const char* legacy_pairing_pin)
@@ -56,15 +70,14 @@ void EspHf::Impl::auth_success_check(esp_bt_gap_cb_param_t* param)
         ESP_LOGI(BT_HF_TAG, "authentication success: %s",
             param->auth_cmpl.device_name);
         snprintf(_info.device_name, sizeof(_info.device_name), "%s", (char*)param->auth_cmpl.device_name);
-        esp_bt_gap_cancel_discovery();
         if (callbacks.cb_bt_pin_correct)
-            xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_pin_correct, 1, nullptr, 1);
+            run_cb(callbacks.cb_bt_pin_correct);
     } else {
         ESP_LOGE(BT_HF_TAG, "authentication failed, status: %d",
             param->auth_cmpl.stat);
         _info.device_name[0] = '\0';
         if (callbacks.cb_bt_pin_incorrect)
-            xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_pin_incorrect, 1, nullptr, 1);
+            run_cb(callbacks.cb_bt_pin_incorrect);
     }
 }
 
@@ -94,13 +107,11 @@ void EspHf::Impl::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_
 void EspHf::Impl::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t* param)
 {
     switch (event) {
-    case ESP_BT_GAP_DISC_RES_EVT: {
-        if (!already_run) {
-            connect_to_bonded_device();
-            already_run = true;
-        }
+    // Name of the connected phone, requested when the phone connects.
+    case ESP_BT_GAP_READ_REMOTE_NAME_EVT:
+        if (param->read_rmt_name.stat == ESP_BT_STATUS_SUCCESS && memcmp(param->read_rmt_name.bda, peer_addr, ESP_BD_ADDR_LEN) == 0)
+            snprintf(_info.device_name, sizeof(_info.device_name), "%s", (char*)param->read_rmt_name.rmt_name);
         break;
-    }
 
     case ESP_BT_GAP_AUTH_CMPL_EVT:
         auth_success_check(param);
@@ -109,7 +120,7 @@ void EspHf::Impl::esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param
     case ESP_BT_GAP_PIN_REQ_EVT: {
         esp_bt_gap_pin_reply(param->pin_req.bda, true, strlen(bt.legacy_pairing_pin), (uint8_t*)bt.legacy_pairing_pin);
         if (callbacks.cb_bt_legacy_pin)
-            xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_legacy_pin, 1, nullptr, 1);
+            run_cb(callbacks.cb_bt_legacy_pin);
         break;
     }
 
