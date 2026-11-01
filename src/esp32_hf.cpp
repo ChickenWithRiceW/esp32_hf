@@ -27,6 +27,8 @@ bool EspHf::begin(void)
         return false;
     }
 
+    _impl->load_volume();
+
     if (!_impl->setup_stacks()) {
         ESP_LOGE(BT_HF_TAG, "Stack setup was not successful");
         return false;
@@ -96,12 +98,12 @@ bool EspHf::Impl::setup_stacks(void)
 
 bool EspHf::Impl::validate_config(void)
 {
-    if (!bt.device_name) {
+    if (!bt.device_name[0]) {
         ESP_LOGE(BT_HF_TAG, "No device name set.");
         return false;
     }
 
-    if (!bt.legacy_pairing_pin) {
+    if (!bt.legacy_pairing_pin[0]) {
         ESP_LOGE(BT_HF_TAG, "No legacy pin set.");
         return false;
     }

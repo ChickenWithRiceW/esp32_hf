@@ -2,6 +2,7 @@
 #include "esp32_hf_intern.hpp"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
+#include <new>
 
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF_GAP"
@@ -9,12 +10,16 @@
 static void connect_to_bonded_device()
 {
     int i = esp_bt_gap_get_bond_device_num();
-    esp_bd_addr_t peer_addrs;
+    if (i <= 0)
+        return;
 
-    if (i > 0) {
-        esp_bt_gap_get_bond_device_list(&i, &peer_addrs);
-        esp_hf_client_connect(peer_addrs);
-    }
+    // The list holds one address per bonded device, so it must be sized for all of them.
+    esp_bd_addr_t* peer_addrs = new (std::nothrow) esp_bd_addr_t[i];
+    if (!peer_addrs)
+        return;
+    if (esp_bt_gap_get_bond_device_list(&i, peer_addrs) == ESP_OK && i > 0)
+        esp_hf_client_connect(peer_addrs[0]);
+    delete[] peer_addrs;
 }
 
 bool EspHf::Impl::setup_bt_gap(const char* device_name, bool ssp_enabled, const char* legacy_pairing_pin)
@@ -49,7 +54,7 @@ void EspHf::Impl::auth_success_check(esp_bt_gap_cb_param_t* param)
     if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
         ESP_LOGI(BT_HF_TAG, "authentication success: %s",
             param->auth_cmpl.device_name);
-        strcpy(_info.device_name, (char*)param->auth_cmpl.device_name);
+        snprintf(_info.device_name, sizeof(_info.device_name), "%s", (char*)param->auth_cmpl.device_name);
         esp_bt_gap_cancel_discovery();
         if (callbacks.cb_bt_pin_correct)
             xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_pin_correct, 1, nullptr, 1);
@@ -64,17 +69,20 @@ void EspHf::Impl::auth_success_check(esp_bt_gap_cb_param_t* param)
 
 void EspHf::Impl::ssp_auth(esp_bd_addr_t bda, uint32_t num_val)
 {
-    static t_auth a;
-
     ESP_LOGI(BT_HF_TAG, "ESP_BT_GAP_CFM_REQ_EVT Please compare the numeric value: %06" PRIu32, num_val);
     esp_bt_gap_ssp_confirm_reply(bda, true);
 
     if (!callbacks.cb_bt_ssp_auth)
         return;
-    snprintf(a.auth_number, sizeof(a.auth_number), "%06" PRIu32, num_val);
-    a.fn = callbacks.cb_bt_ssp_auth;
+    t_auth* a = new (std::nothrow) t_auth;
+    if (!a)
+        return;
+    snprintf(a->auth_number, sizeof(a->auth_number), "%06" PRIu32, num_val);
+    a->fn = callbacks.cb_bt_ssp_auth;
 
-    xTaskCreatePinnedToCore(ssp_auth_wrap, nullptr, TASK_SIZE, (void*)&a, 1, nullptr, 1);
+    // The task frees 'a'; if it could not start, free it here.
+    if (xTaskCreatePinnedToCore(ssp_auth_wrap, nullptr, TASK_SIZE, (void*)a, 1, nullptr, 1) != pdPASS)
+        delete a;
 }
 
 void EspHf::Impl::esp_bt_gap_cb_wrapper(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t* param)

@@ -234,3 +234,34 @@ void EspHf::Impl::audio_change(esp_hf_client_cb_param_t* param)
         bt_app_hf_client_audio_close();
     }
 }
+
+// The volume is stored in flash (NVS) so it is known again after a reboot.
+#define VOLUME_NVS_NAMESPACE "esp32_hf"
+#define VOLUME_NVS_KEY "volume"
+
+void EspHf::Impl::load_volume(void)
+{
+    nvs_handle_t handle;
+    uint8_t saved;
+
+    if (nvs_open(VOLUME_NVS_NAMESPACE, NVS_READONLY, &handle) != ESP_OK)
+        return;
+    if (nvs_get_u8(handle, VOLUME_NVS_KEY, &saved) == ESP_OK && saved <= 15)
+        _info.volume = saved;
+    nvs_close(handle);
+}
+
+void EspHf::Impl::save_volume(int new_volume)
+{
+    if (new_volume < 0 || new_volume > 15 || new_volume == _info.volume)
+        return;
+    _info.volume = new_volume;
+
+    // Only written when the volume actually changed, to limit flash wear.
+    nvs_handle_t handle;
+    if (nvs_open(VOLUME_NVS_NAMESPACE, NVS_READWRITE, &handle) != ESP_OK)
+        return;
+    nvs_set_u8(handle, VOLUME_NVS_KEY, static_cast<uint8_t>(new_volume));
+    nvs_commit(handle);
+    nvs_close(handle);
+}

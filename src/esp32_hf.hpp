@@ -38,16 +38,14 @@ public:
     // Setters
 
     /**
-     * @brief Set device name of bluetooth device. Ensure that the string will not be freed at runtime.
-     *
-     * This is runtime changeable but will only be visible when the AG Host disconnects from client and reconnects.
+     * @brief Set device name of bluetooth device. The string is copied. Must be called before begin().
      * @param device_name String representing device name.
      * @return True if action was successful, false if error occurred.
      */
     bool setDeviceName(const char* device_name);
 
     /**
-     * @brief Set legacy pin. Legacy pin has a max length of 16 and should only contain numbers and/or letters.
+     * @brief Set legacy pin (copied). Must be called before begin(). Max length 16, numbers and/or letters.
      *        Pin should be at least one character long.
      * @param legacy_pin String representing the legacy pin.
      * @return True if action was successful, false if error occurred.

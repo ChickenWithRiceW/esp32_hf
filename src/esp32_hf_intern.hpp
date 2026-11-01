@@ -49,22 +49,27 @@ extern "C" {
         return false;             \
     }
 
+// Room for "+" + 15 digits + NUL. Longer numbers are truncated.
+#define PHONE_NUMBER_LEN 20
+
+// Callback arguments. One heap copy is made per event and freed by the callback task.
 struct t_call {
     void (*fn)(char phone_number[15], bool sim_call) = nullptr;
-    char phone_number[15];
+    char phone_number[PHONE_NUMBER_LEN] = {};
     bool is_simcard_call = false;
 };
 
 struct t_auth {
     void (*fn)(char[7]) = nullptr;
-    char auth_number[7];
+    char auth_number[7] = {};
 };
 
 struct t_bluetooth {
     // Bluetooth device name of esp. This will be the name you see in the bluetooth menu.
-    const char* device_name = nullptr;
-    // Bluetooth pin in cases of old phone or secure pairing (ssp) disabled.
-    const char* legacy_pairing_pin = nullptr;
+    // Copied by the setter, empty means not set.
+    char device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1] = {};
+    // Bluetooth pin in cases of old phone or secure pairing (ssp) disabled. Empty means not set.
+    char legacy_pairing_pin[ESP_BT_PIN_CODE_LEN + 1] = {};
     // Secured pairing, if disabled fallback to legacy pin pairing.
     bool ssp_enabled = true;
 };
@@ -94,11 +99,13 @@ struct t_microphone {
 struct t_info {
     int battery_level = 0;
     int signal_strength = 0;
-    int volume = 0;
-    e_state state;
+    // Speaker volume 0-15. The phone only reports it when it changes, so the last
+    // value is saved in flash. 15 (no attenuation) is used until one has been saved.
+    int volume = 15;
+    e_state state = IDLE_DISCONNECTED;
     bool network_available = false;
     bool connected = false;
-    char device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
+    char device_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1] = {};
 };
 
 struct t_callbacks {
@@ -148,6 +155,8 @@ struct EspHf::Impl {
     void ssp_auth(esp_bd_addr_t bda, uint32_t num_val);
 
     void audio_change(esp_hf_client_cb_param_t* param);
+    void load_volume(void);
+    void save_volume(int volume);
     bool start_microphone(uint32_t sample_rate);
     void connection_change(const esp_hf_client_cb_param_t* param);
     void call(const char* phone_number, bool is_simcard_call, void (*fn)(char*, bool));

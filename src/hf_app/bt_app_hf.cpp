@@ -1,6 +1,7 @@
 #include "esp32_hf_intern.hpp"
 #include "freertos/idf_additions.h"
 #include <cstring>
+#include <new>
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF"
 
@@ -45,11 +46,13 @@ void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t* param)
 {
     if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED && _info.connected) {
         _info.connected = false;
+        _info.state = IDLE_DISCONNECTED;
         esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
         if (callbacks.cb_bt_disconnected)
             xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_disconnected, 1, nullptr, 1);
     } else if (param->conn_stat.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED && !_info.connected) {
         _info.connected = true;
+        _info.state = IDLE_CONNECTED;
         if (callbacks.cb_bt_connected)
             xTaskCreatePinnedToCore(wrap, nullptr, TASK_SIZE, (void*)callbacks.cb_bt_connected, 1, nullptr, 1);
     }
@@ -58,25 +61,28 @@ void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t* param)
 
 void EspHf::Impl::call(const char* phone_number, bool is_simcard_call, void (*fn)(char*, bool))
 {
-    static t_call arg;
-
     if (!fn)
         return;
 
-    arg.fn = fn;
-    arg.is_simcard_call = is_simcard_call;
+    // Own copy per event, so quick back-to-back events can't overwrite each other.
+    // The callback task frees it; if the task could not start, free it here.
+    t_call* arg = new (std::nothrow) t_call;
+    if (!arg)
+        return;
 
-    if (!is_simcard_call)
-        arg.phone_number[0] = '\0';
-    else
-        strcpy(arg.phone_number, phone_number);
+    arg->fn = fn;
+    arg->is_simcard_call = is_simcard_call;
+    if (is_simcard_call && phone_number)
+        snprintf(arg->phone_number, sizeof(arg->phone_number), "%s", phone_number);
 
-    xTaskCreatePinnedToCore(call_wrap, nullptr, TASK_SIZE, &arg, 1, nullptr, 1);
+    if (xTaskCreatePinnedToCore(call_wrap, nullptr, TASK_SIZE, arg, 1, nullptr, 1) != pdPASS)
+        delete arg;
 }
 
 void EspHf::Impl::call_event(char* phone_number, esp_hf_current_call_direction_t dir)
 {
-    bool has_phone_number = (strcmp(phone_number, NO_SIMCARD_CALL_NUMBER) != 0);
+    // The number can be missing, treat that like an app call.
+    bool has_phone_number = (phone_number && strcmp(phone_number, NO_SIMCARD_CALL_NUMBER) != 0);
 
     if (dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || incoming_call) {
         _info.state = INCOMING_CALL;
@@ -169,7 +175,9 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
         // TODO: End of not tested cases.
 
     case ESP_HF_CLIENT_VOLUME_CONTROL_EVT:
-        _info.volume = param->volume_control.volume;
+        // Only the speaker volume matters here, ignore microphone volume changes.
+        if (param->volume_control.type == ESP_HF_VOLUME_CONTROL_TARGET_SPK)
+            save_volume(param->volume_control.volume);
         break;
     }
 }
