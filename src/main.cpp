@@ -1,68 +1,96 @@
-#include "esp32-hal.h"
-#include "keypad_matrix.h"
-#include <Arduino.h>
 #include "esp32_hf.hpp"
+#include <Arduino.h>
 
 // For speaker example.
 #define SPEAKER_LRC_WS 25
-#define SPEAKER_DOUT 27
-#define SPEAKER_BCLK 26
+#define SPEAKER_DOUT 26
+#define SPEAKER_BCLK 5
 
+// Analog microphone signal into ESP32 ADC1. GPIO 34 is input-only and ADC1.
+#define MIC_ADC_PIN 34
+
+// Alternative standard-I2S microphone input pins (for example, an I2S MEMS
+// mic).
+#define MIC_I2S_BCLK 14
+#define MIC_I2S_WS 27
+#define MIC_I2S_DIN 32
+
+// Create object. Make sure it stays in scope for the full project.
 EspHf& hf = EspHf::getInstance();
-constexpr uint8_t kLeverPin = 13;
-bool lastLever = false;
+I2SClass speaker;
 
-void setup() {
-  Serial.begin(115200);
-  KeypadMatrix::begin();
-  
-  // Mandatory setup.
-  hf.setDeviceName("ESP-HF 42");
-  hf.setLegacyPin("0000");
-  
-  hf.setupSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DOUT);
-  // pinMode(kLeverPin, INPUT_PULLUP);
-  delay(10);
-  // lastLever = (digitalRead(kLeverPin) == LOW);
-  hf.begin();
+void cbIncoming(char phone_number[15], bool sim_call)
+{
+    if (sim_call)
+        Serial.printf("Ingoing call from Simcard. Number %s", phone_number);
+    else
+        Serial.printf("Ingoing call from some app. Number %s", phone_number);
 }
 
-char phone_number[15] = {0}; 
-int i = 0;
-
-
-void loop() {
-  // char key = KeypadMatrix::getKeyPressed();  // plays the phone tone itself
-  char key = 0;
-  if (key)
-  {
-    Serial.println(key);
-    if (key == 'W')
-    {
-      phone_number[0] = 0;
-      i = 0;
-    }
+void cbOutgoing(char phone_number[15], bool sim_call)
+{
+    if (sim_call)
+        Serial.printf("Outgoing call from Simcard. Number %s", phone_number);
     else
-    {
-      phone_number[i++] = key;
-      phone_number[i] = 0;
-    }
-  }
+        Serial.printf("Outgoing call from some app. Number %s", phone_number);
+}
 
-  // bool lever = (digitalRead(kLeverPin) == LOW);
-  // if (lever && !lastLever) {
-  //   // KeypadMatrix::playBeep(500, 100);        // lever beep through the same buzzer
-  //   if (!phone_number[0])
-  //     hf.acceptIncomingCall();
-  //   else
-  //     hf.callNumber(phone_number);
-  // }
-  // if (!lever && lastLever)
-  // {
-  //   Serial.println("Reject");
-  //   hf.rejectIncomingCall();
-  // }
-  // lastLever = lever;
-  // delayMicroseconds(500);
+void con(void) { Serial.println("Connected"); }
 
+void dis(void) { Serial.println("Disconnected"); }
+
+void failed(void) { Serial.println("Validation failed"); }
+
+void success(void) { Serial.println("Validation worked"); }
+
+void ssp_auth(char* name) { Serial.println(name); }
+
+// Example
+void setup()
+{
+    Serial.begin(115200);
+    Serial.println("Begun.");
+    Serial.print("WHAT");
+
+    // I2SClass *speaker = hf.setSpeaker(12, 45, 67);
+
+    // Mandatory setup.
+    hf.setDeviceName("ESP-HF 42");
+    hf.setLegacyPin("0123456789123456");
+
+    // hf.setSpeakerI2s(&speaker);
+    hf.setupSpeaker(SPEAKER_BCLK, SPEAKER_LRC_WS, SPEAKER_DOUT);
+    hf.setMicrophoneAdcPin(MIC_ADC_PIN);
+    // To use an I2S microphone instead, replace the ADC selection above with:
+    // hf.setMicrophoneI2s(MIC_I2S_BCLK, MIC_I2S_WS, MIC_I2S_DIN);
+
+    // // Optional
+    // hf.setSecurePairing(false);
+    hf.setCbIncomingCall(cbIncoming);
+    hf.setCbOutgoingCall(cbOutgoing);
+
+    hf.setCbBtConnected(con);
+    hf.setCbBtDisconnected(dis);
+
+    hf.setCbPinCorrect(success);
+    hf.setCbPinIncorrect(failed);
+
+    hf.setCbSspAuth(ssp_auth);
+
+    // Start Hf after setup.
+    // Serial.printf("WITHOUT INIT: %d\n", esp_hf_client_answer_call());
+    // Serial.print(hf.acceptIncomingCall());
+
+    Serial.println(hf.begin());
+
+    // speakerTest();
+}
+
+void loop()
+{
+    // put your main code here, to run repeatedly:
+    delay(1000);
+    // Serial.println(hf.getState());
+
+    // This will most likely not work but I dont know.
 }

@@ -20,5 +20,5 @@ bool EspHf::callNumber(char *phone_number) {
     ASSERT_INIT
     if (!phone_number || !phone_number[0])
         return false;
-    return esp_hf_client_dial(phone_number);
+    return (esp_hf_client_dial(phone_number) == 0);
 }
