@@ -16,7 +16,8 @@ bool EspHf::rejectIncomingCall(void)
     return (esp_hf_client_reject_call() == 0);
 }
 
-bool EspHf::callNumber(char *phone_number) {
+bool EspHf::callNumber(const char* phone_number)
+{
     ASSERT_INIT
     if (!phone_number || !phone_number[0])
         return false;

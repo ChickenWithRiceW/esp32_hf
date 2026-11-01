@@ -38,6 +38,7 @@ bool EspHf::Impl::setup_bt_gap(const char* device_name, bool ssp_enabled, const 
     // Set pincode, and activate callback calls for auth.
     esp_bt_gap_set_pin(ESP_BT_PIN_TYPE_VARIABLE, strlen(legacy_pairing_pin), (uint8_t*)legacy_pairing_pin);
 
+    // Setup how the device will be presented.
     esp_bt_cod_t cod = { 0 };
     cod.major = ESP_BT_COD_MAJOR_DEV_AV;
     cod.minor = 0x01;

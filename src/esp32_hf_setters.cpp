@@ -66,7 +66,7 @@ I2SClass* EspHf::setupSpeaker(int8_t bclk, int8_t ws, int8_t dout, int8_t din, i
         return NULL;
     }
     _impl->speaker.speaker.setPins(bclk, ws, dout, din, mclk);
-    if (!_impl->speaker.speaker.begin(I2S_MODE_STD, MSBC_BITRATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO)) {
+    if (!_impl->speaker.speaker.begin(I2S_MODE_STD, MSBC_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO)) {
         ESP_LOGE(BT_HF_TAG, "I2s speaker init failed");
         return NULL;
     }

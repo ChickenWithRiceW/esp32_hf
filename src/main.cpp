@@ -7,21 +7,21 @@
 // State changes and heap usage are also printed automatically.
 
 // For speaker example.
-#define SPEAKER_LRC_WS 25
-#define SPEAKER_DOUT 26
-#define SPEAKER_BCLK 5
+static constexpr int8_t SPEAKER_LRC_WS = 25;
+static constexpr int8_t SPEAKER_DOUT = 26;
+static constexpr int8_t SPEAKER_BCLK = 5;
 
 // Analog microphone signal into ESP32 ADC1. GPIO 34 is input-only and ADC1.
-#define MIC_ADC_PIN 34
+static constexpr uint8_t MIC_ADC_PIN = 34;
 
 // Alternative standard-I2S microphone input pins (for example, an I2S MEMS
 // mic).
-#define MIC_I2S_BCLK 14
-#define MIC_I2S_WS 27
-#define MIC_I2S_DIN 32
+static constexpr int8_t MIC_I2S_BCLK = 14;
+static constexpr int8_t MIC_I2S_WS = 27;
+static constexpr int8_t MIC_I2S_DIN = 32;
 
 // Number used by the 'd' command. Change to a number you can safely call.
-#define TEST_NUMBER "112"
+static constexpr const char* TEST_NUMBER = "112";
 
 // Create object. Make sure it stays in scope for the full project.
 EspHf& hf = EspHf::getInstance();
@@ -74,7 +74,7 @@ void legacyAuth(void) { Serial.println("[BT] Legacy PIN requested"); }
 
 void printHelp()
 {
-    Serial.println("Commands: a=accept  r=reject/hang up  d=dial " TEST_NUMBER "  s=state  h=help");
+    Serial.printf("Commands: a=accept  r=reject/hang up  d=dial %s  s=state  h=help\n", TEST_NUMBER);
 }
 
 void setup()
@@ -138,7 +138,7 @@ void loop()
             Serial.printf("reject -> %d\n", hf.rejectIncomingCall());
             break;
         case 'd':
-            Serial.printf("dial -> %d\n", hf.callNumber((char*)TEST_NUMBER));
+            Serial.printf("dial -> %d\n", hf.callNumber(TEST_NUMBER));
             break;
         case 's':
             Serial.printf("[STATE] %s (%d)\n", stateName(state), state);

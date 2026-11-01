@@ -2,11 +2,12 @@
 #include "freertos/idf_additions.h"
 #include <cstring>
 #include <new>
+
 #undef BT_HF_TAG
 #define BT_HF_TAG "BT_HF"
 
 // This is the number that gets send by the esp32 internal when you call someone on any other app then over your normal simcard.
-#define NO_SIMCARD_CALL_NUMBER "10000000"
+static constexpr const char* NO_SIMCARD_CALL_NUMBER = "10000000";
 
 extern "C" {
 #include "esp_hf_client_api.h"
