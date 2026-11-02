@@ -11,6 +11,25 @@ The ESP32 with this library behaves like the hands-free system in a car: it show
 
 **[Overview](#overview) · [Install](#install) · [Quick start](#quick-start) · [Hardware and wiring](#hardware-and-wiring) · [Using the library](#using-the-library) · [API](#api-at-a-glance) · [How it works](#how-it-works) · [Troubleshooting](#troubleshooting) · [Limitations and status](#limitations-and-status)**
 
+## Overview
+
+### What you can do
+
+| | |
+| --- | --- |
+| **Calls** | Know about incoming and outgoing calls, with the caller's number. Answer, reject, hang up, dial, redial. |
+| **Sound** | Caller's voice on an I2S speaker. Your voice from an analog or I2S microphone. Volume and mute. |
+| **Phone info** | Battery level, signal strength, mobile network, the connected phone's name. |
+| **Connection** | Pairs with PIN or secure pairing. Reconnects to paired phones by itself. |
+
+### What you need
+
+- An **original ESP32** board (ESP32 DevKit and similar). The S2, S3, C3 and C6 have no Bluetooth Classic and do NOT work.
+- **Arduino-ESP32 3.x**, with PlatformIO or the Arduino IDE.
+- A phone with Bluetooth.
+- Optional, to talk and listen: an I2S speaker amplifier (for example **MAX98357A**) and a microphone (an amplified analog board, or an I2S one such as the **INMP441**).
+
+
 ## Sketch: Talk and listen
 
 ```cpp
@@ -85,22 +104,9 @@ void loop()
 <a href="docs/images/wiring-analog-mic.svg"><img src="docs/images/wiring-analog-mic.svg" alt="Wiring: analog microphone" width="49%"></a>
 </p>
 
-*Click a picture to see it full size.*
-
-The microphone must be an **amplified** board with its output centered around half the supply voltage, on an ADC1 pin (GPIO 32 to 39). More on parts and pins in [Hardware and wiring](#hardware-and-wiring).
-
-### Try it
-
-1. Upload the sketch and open the Serial Monitor at 115200.
-2. Pair **ESP32 Hands-Free** in your phone's Bluetooth settings. If the phone asks you to confirm a code, accept. If it asks for a PIN, type `1234`.
-3. Call your phone from another phone and answer **on the phone**. The call sound moves to the ESP32: you hear the caller on the speaker and talk into the microphone.
-
-The Serial Monitor shows "Phone connected", "Incoming call from ...", and "Call ended".
-
-
 ## More examples
 
-Click an example to open it. Each one is also a ready sketch in the [`examples/`](examples/) folder (Arduino IDE: **File > Examples > ESP32 HFP**).
+Each one is also a ready sketch in the [`examples/`](examples/) folder (Arduino IDE: **File > Examples > ESP32 HFP**).
 
 <details>
 <summary><b>Print calls: no extra parts</b></summary>
@@ -172,13 +178,6 @@ void loop()
 
 Two buttons, each between a pin and GND. No resistors are needed: the sketch uses the internal pull-up resistors.
 
-| Button | Pin |
-| --- | --- |
-| Answer | GPIO 18 |
-| Reject / hang up | GPIO 19 |
-
-![Wiring: answer and reject buttons](docs/images/wiring-buttons.svg)
-
 ```cpp
 // ButtonControl
 // Answer and reject calls with two buttons.
@@ -234,6 +233,12 @@ void loop()
     delay(10);
 }
 ```
+| Button | Pin |
+| --- | --- |
+| Answer | GPIO 18 |
+| Reject / hang up | GPIO 19 |
+
+![Wiring: answer and reject buttons](docs/images/wiring-buttons.svg)
 
 </details>
 
@@ -241,16 +246,6 @@ void loop()
 <summary><b>Digital I2S microphone (INMP441) instead of the analog one</b></summary>
 
 The same hands-free as the first sketch, with a digital microphone. The microphone uses I2S port 0 and the speaker port 1, so both work together.
-
-| INMP441 | ESP32 |
-| --- | --- |
-| SCK | GPIO 14 |
-| WS | GPIO 27 |
-| SD | GPIO 32 |
-| VDD | 3.3 V (not 5 V) |
-| GND, L/R | GND |
-
-![Wiring: INMP441 I2S microphone](docs/images/wiring-i2s-mic.svg)
 
 ```cpp
 // HandsFreeI2SMic
@@ -303,10 +298,20 @@ void loop()
 }
 ```
 
+| INMP441 | ESP32 |
+| --- | --- |
+| SCK | GPIO 14 |
+| WS | GPIO 27 |
+| SD | GPIO 32 |
+| VDD | 3.3 V (not 5 V) |
+| GND, L/R | GND |
+
+![Wiring: INMP441 I2S microphone](docs/images/wiring-i2s-mic.svg)
+
 </details>
 
 <details>
-<summary><b>Complete phone kit: buttons, volume, mute, LED and Serial commands</b></summary>
+<summary><b>Complete phone kit (Recommended to explore all features): buttons, volume, mute, LED and Serial commands</b></summary>
 
 One sketch with the most important uses together: speaker, microphone, answer / redial and reject buttons, volume up and down, mute, a status LED, and Serial Monitor commands. If you want a working product rather than a demo, start from this one.
 
@@ -602,24 +607,6 @@ How the sketch is built:
 
 </details>
 
-## Overview
-
-### What you can do
-
-| | |
-| --- | --- |
-| **Calls** | Know about incoming and outgoing calls, with the caller's number. Answer, reject, hang up, dial, redial. |
-| **Sound** | Caller's voice on an I2S speaker. Your voice from an analog or I2S microphone. Volume and mute. |
-| **Phone info** | Battery level, signal strength, mobile network, the phone's name. |
-| **Connection** | Pairs with PIN or secure pairing. Reconnects to paired phones by itself. |
-| **Small API** | One class, a handful of functions and callbacks. No Bluetooth stack details. |
-
-### What you need
-
-- An **original ESP32** board (ESP32 DevKit and similar). The S2, S3, C3 and C6 have no Bluetooth Classic and do not work.
-- **Arduino-ESP32 3.x**, with PlatformIO or the Arduino IDE.
-- A phone with Bluetooth. Almost every phone supports the Hands-Free Profile.
-- Optional, to talk and listen: an I2S speaker amplifier (for example **MAX98357A**) and a microphone (an amplified analog board, or an I2S one such as the **INMP441**).
 
 ## Install
 
@@ -632,7 +619,7 @@ board = esp32dev
 framework = arduino
 monitor_speed = 115200
 lib_deps =
-    TODO: repository URL
+    https://github.com/ChickenWithRiceW/esp32_hf.git
 ```
 
 The `platform` line gives you Arduino-ESP32 3.x. The library was developed with this exact version.
@@ -642,11 +629,6 @@ The `platform` line gives you Arduino-ESP32 3.x. The library was developed with 
 A sketch using the library is about 1.1 MB. That fits the default partition scheme, but only just. If the upload says the sketch is too big, choose a partition scheme with more app space (for example "Huge APP").
 
 ## Quick start
-
-1. **Install** the library (see above) and wire the speaker and microphone from [Your first sketch](#your-first-sketch-talk-and-listen).
-2. **Upload** the first sketch. No speaker or microphone yet? Open *Print calls* under [More examples](#more-examples). It needs only the ESP32.
-3. **Pair** the phone: open its Bluetooth settings and tap the name you set with `setDeviceName()`. If it asks for a PIN, use the one from `setLegacyPin()`.
-4. **Call** the phone from another phone. Answer on the phone and talk.
 
 ### The rules in one minute
 
@@ -666,82 +648,11 @@ You do not need extra parts to see calls and to answer or reject them. You only 
 | Hear the caller | An I2S speaker amplifier and a speaker |
 | Be heard | A microphone (analog or I2S) |
 
-The pin numbers below are the ones used in the examples. You can change them.
-
-### Speaker: MAX98357A
-
-A small amplifier board that takes digital audio (I2S) and drives a speaker directly. You do not need a separate DAC.
-
-| MAX98357A | ESP32 | Meaning |
-| --- | --- | --- |
-| VIN | 5 V (or 3.3 V) | Power. 5 V is louder. |
-| GND | GND | Ground |
-| BCLK | GPIO 5 | Bit clock |
-| LRC | GPIO 25 | Left/right clock (the library calls this `ws`) |
-| DIN | GPIO 26 | Audio data from the ESP32 |
-| SD, GAIN | not connected | Leave open to start with |
-
-Connect a 4 to 8 ohm speaker to the two output terminals. In the sketch:
-
-```cpp
-hf.setupSpeaker(5, 25, 26);   // bclk, ws, dout. Returns nullptr if it failed.
-```
-
-![Wiring: MAX98357A speaker amplifier](docs/images/wiring-speaker.svg)
-
-The picture shows the Adafruit MAX98357A board. Other MAX98357A boards use the same pin names, but the pins can be in a different order, so follow the labels on your board.
-
-To use an I2S object you set up yourself, see [`setSpeakerI2s`](docs/API.md#setspeakeri2s). It must be 16-bit mono, stay alive while the library runs, and must not use I2S port 0 if you also use a microphone.
-
-### Microphone: pick one
-
-**Option A: analog microphone**
-
-```cpp
-hf.setMicrophoneAdcPin(34);
-```
-
-1. The signal must come from an **amplified microphone board**. A bare electret capsule gives a signal that is far too small. The library does **not** add gain.
-2. The signal must be **centered around half the supply voltage** (about 1.65 V). Silence should sit near that level, and speech should move up and down from it. Most amplified electret boards do this.
-3. Use an **ADC1** pin: GPIO 32, 33, 34, 35, 36 or 39. ADC2 pins do not work. GPIO 34 to 39 are input only, which is fine here.
-
-![Wiring: analog microphone](docs/images/wiring-analog-mic.svg)
-
-The ESP32's analog input is noisy. It is good enough for speech, but an I2S microphone sounds cleaner. *Parts tested: TODO (author fills in the board that was used).*
-
-**Option B: I2S microphone (for example INMP441)**
-
-```cpp
-hf.setMicrophoneI2s(14, 27, 32);   // bclk, ws, din
-```
-
-| INMP441 | ESP32 | Meaning |
-| --- | --- | --- |
-| VDD | 3.3 V | Power. **Not** 5 V. |
-| GND | GND | Ground |
-| SCK | GPIO 14 | Bit clock |
-| WS | GPIO 27 | Word select |
-| SD | GPIO 32 | Audio data from the microphone |
-| L/R | GND | Picks the left channel |
-
-![Wiring: INMP441 I2S microphone](docs/images/wiring-i2s-mic.svg)
-
-If you only get silence, try L/R to 3.3 V instead. The microphone only records while call audio is connected.
-
-### The two I2S ports
-
-| Port | Used for |
-| --- | --- |
-| I2S 0 | Microphone (the analog microphone uses it internally too) |
-| I2S 1 | Speaker |
-
-`setupSpeaker()` already uses port 1, so you only need to care if you pass your own speaker object. The library refuses a speaker on port 0 when a microphone is set, and says so in the log.
 
 ### Pins to avoid and power
 
 - GPIO 6 to 11 are connected to the flash memory. Never use them.
 - GPIO 0, 2, 5, 12 and 15 are read when the chip starts. A wrong level at that moment can stop the ESP32 from booting. GPIO 5 is used for the speaker in the examples and works on most boards. If yours doesn't start with the amplifier connected, try another pin.
-- A speaker can pull a lot of current. If the ESP32 resets when the sound gets loud, give the amplifier a stronger power source or add a capacitor (for example 470 µF) near its VIN pin.
 
 ## Using the library
 
@@ -750,20 +661,20 @@ The full list of functions is in the **[API documentation](docs/API.md)**. This 
 ### The usual order
 
 ```cpp
-EspHf& hf = EspHf::getInstance();   // 1. Get the library (there is only one)
+EspHf& hf = EspHf::getInstance();   // Get the library (there is only one)
 
 void setup() {
-    hf.setDeviceName("My Kit");     // 2. Configure it
-    hf.setLegacyPin("1234");
-    hf.setupSpeaker(5, 25, 26);
-    hf.setMicrophoneAdcPin(34);
-    hf.setCbIncomingCall(onIncoming);
+    hf.setDeviceName("My Kit");         // Set device name you will see on bluetooth.
+    hf.setLegacyPin("1234");            // Set legacy pin for bluetooth connecting.
+    hf.setupSpeaker(5, 25, 26);         // Setup speaker by giving in used pins.
+    hf.setMicrophoneAdcPin(34);         // Setup analog microphone with dedicated pin.
+    hf.setCbIncomingCall(onIncoming);   // Setup which function will be called when there is a incoming call.
 
-    hf.begin();                     // 3. Start it. Once.
+    hf.begin();                     // Start it. Once.
 }
 ```
 
-After `begin()`, the functions that set up names, pairing and audio refuse to work and print an error in the log. Callbacks can be changed at any time.
+After `begin()`, you can change most settings on runtime but most will only update when you reconnect to the esp32. Callbacks can be changed at any time with instant update.
 
 If `begin()` returns `false`, the name or PIN is missing, or Bluetooth could not start. The log says which. After a failed `begin()` the library cleans up, so you can fix the problem and call `begin()` again.
 
@@ -772,154 +683,39 @@ If `begin()` returns `false`, the name or PIN is missing, or Bluetooth could not
 After `begin()` the ESP32 is visible to every phone nearby. To pair, open the phone's Bluetooth settings and tap its name. There are two styles, and the phone picks:
 
 - **Secure pairing (default).** The phone shows a 6-digit code. The ESP32 accepts it automatically. To see the code on the ESP32 side, use `setCbSspAuth()`.
-- **PIN pairing.** The phone asks for the PIN you set. Phones use this when secure pairing is off, or when they are old. Force it with `hf.setSecurePairing(false)`.
+- **PIN pairing.** The phone asks for the PIN you set. Phones use this when secure pairing is off, or when your phone is old. Force pin paring with `hf.setSecurePairing(false)`.
 
 Use `setCbPinCorrect()` and `setCbPinIncorrect()` to be told how pairing went. The pairing is stored in flash, so it survives a restart.
 
 > Any phone in range can pair with the ESP32. There is no pairing button yet.
 
-### Connecting and reconnecting
-
-You do not have to connect anything. After a phone is paired:
-
-- the library tries to connect to paired phones when it starts,
-- while no phone is connected it tries the next paired phone every 5 seconds,
-- and a phone can also connect to the ESP32 by itself.
-
-"Connected" means the phone and ESP32 are ready to talk. Use `setCbBtConnected()` and `setCbBtDisconnected()`, or ask with `hf.isConnected()` and `hf.getPeerName()`.
-
-To make the ESP32 forget a phone, remove the ESP32 in the phone's Bluetooth settings. Erasing the flash forgets all phones.
-
-### Calls
-
-```cpp
-void onIncoming(char number[15], bool simCall) { ... }
-void onOutgoing(char number[15], bool simCall) { ... }
-
-hf.setCbIncomingCall(onIncoming);
-hf.setCbOutgoingCall(onOutgoing);
-```
-
-| `simCall` | Meaning | `number` |
-| --- | --- | --- |
-| `true` | A normal phone call | The phone number (cut off after 19 characters) |
-| `false` | A call from an app (WhatsApp, Teams, ...) | Empty |
-
-Two more callbacks tell you when a call is really running: `setCbCallActive()` when a call is answered, and `setCbCallEnded()` when an active call ends. `setCbCallEnded()` is **not** called for calls that were rejected or missed, because they never became active.
-
-Control calls with:
-
-```cpp
-hf.acceptIncomingCall();        // answer
-hf.rejectIncomingCall();        // reject a ringing call, or hang up
-hf.endCall();                   // same as reject, a clearer name during a call
-hf.callNumber("0123456789");    // dial
-hf.redial();                    // call the last number again
-```
-
-They return `true` when the command was sent. That does not prove the phone did it. Calling them when there is no call is harmless.
-
-### The state
-
-`getState()` follows the phone's own call signals. It does not depend on whether the call sound is connected.
-
-| State | Meaning |
-| --- | --- |
-| `IDLE_DISCONNECTED` | No phone connected |
-| `IDLE_CONNECTED` | Phone connected, no call |
-| `INCOMING_CALL` | The phone is ringing |
-| `OUTGOING_CALL` | A call is being placed |
-| `IN_CALL` | A call is active |
-
-### Volume and mute
-
-```cpp
-hf.setVolume(10);       // 0 (quiet) to 15 (loud)
-hf.setMicMute(true);    // the other person hears silence
-```
-
-- The library lowers the loudness of the sound it plays on your speaker. `setVolume()` also tells the phone, and the number is saved so it is the same after a restart.
-- When the phone's volume buttons change the call volume, the phone tells the ESP32 and the ESP32 follows.
-- A phone can't be asked for its current volume. Until it has reported one, the library plays at full volume (15).
-- Mute stays set until you change it, also for the next call.
-
-### Moving the call sound
-
-During a call the sound can be on the phone or on the ESP32. `hf.connectAudio()` moves it to the ESP32 (speaker and microphone), `hf.disconnectAudio()` moves it back. `setCbAudioConnected()` and `setCbAudioDisconnected()` tell you when it changes. Many phones already send the sound to the ESP32 while the call is still ringing.
-
-### Phone information
-
-```cpp
-int battery = hf.getBatteryLevel();      // 0 to 5, or -1 if the phone did not say
-int signal = hf.getSignalStrength();     // 0 to 5, or -1
-bool network = hf.isNetworkAvailable();  // does the phone have mobile service
-```
-
-Not every phone reports these. They reset to "unknown" when the phone disconnects.
-
-### Callbacks: what you must know
-
-Callbacks run in their own small tasks, not in `loop()`. So:
-
-1. They can run **at the same time** as `loop()`. If both use the same variable, mark simple flags `volatile`, and protect bigger data with a mutex.
-2. Keep them short. Don't wait (`delay`) for long inside them.
-3. Each has about 4 KB of stack. Don't put big arrays in them.
-4. The `number` text is only valid inside the callback. Copy it if you need it later.
-
-A good habit is to set a flag in the callback and do the real work in `loop()`:
-
-```cpp
-volatile bool ringing = false;
-
-void onIncoming(char number[15], bool simCall) { ringing = true; }
-
-void loop() {
-    if (ringing) {
-        ringing = false;
-        // do something, for example light an LED
-    }
-}
-```
-
 ## API at a glance
 
 Every function on one page. The full description of each one, with parameters, return values and rules, is in the **[API documentation](docs/API.md)**.
-
 ```cpp
 // Setup, before begin()
-hf.setDeviceName("Kit");        hf.setLegacyPin("1234");      hf.setSecurePairing(true);
+hf.setDeviceName("Kit");                hf.setLegacyPin("1234");                hf.setSecurePairing(true);
 hf.setupSpeaker(bclk, ws, dout);
-hf.setMicrophoneAdcPin(pin);    hf.setMicrophoneI2s(bclk, ws, din);
+hf.setMicrophoneAdcPin(pin);            hf.setMicrophoneI2s(bclk, ws, din);
 hf.begin();
 
 // Calls
-hf.acceptIncomingCall();  hf.rejectIncomingCall();  hf.endCall();
-hf.callNumber("0123456789");  hf.redial();
+hf.acceptIncomingCall();                hf.rejectIncomingCall();                hf.endCall();
+hf.callNumber("0123456789");            hf.redial();
 
 // Sound
-hf.setVolume(0..15);  hf.setMicMute(true);  hf.connectAudio();  hf.disconnectAudio();
+hf.setVolume(0..15);    hf.setMicMute(true);    hf.connectAudio();    hf.disconnectAudio();
 
 // Information
-hf.getState();  hf.isConnected();  hf.getPeerName();
-hf.getBatteryLevel();  hf.getSignalStrength();  hf.isNetworkAvailable();  hf.getVolume();
+hf.getState();              hf.isConnected();           hf.getPeerName();
+hf.getBatteryLevel();       hf.getSignalStrength();     hf.isNetworkAvailable();    hf.getVolume();
 
 // Callbacks
-hf.setCbIncomingCall(f);  hf.setCbOutgoingCall(f);  hf.setCbCallActive(f);  hf.setCbCallEnded(f);
-hf.setCbBtConnected(f);   hf.setCbBtDisconnected(f);
+hf.setCbIncomingCall(f);    hf.setCbOutgoingCall(f);    hf.setCbCallActive(f);      hf.setCbCallEnded(f);
+hf.setCbBtConnected(f);     hf.setCbBtDisconnected(f);
 hf.setCbAudioConnected(f);  hf.setCbAudioDisconnected(f);
-hf.setCbPinCorrect(f);  hf.setCbPinIncorrect(f);  hf.setCbSspAuth(f);  hf.setCbLegacyAuth(f);
+hf.setCbPinCorrect(f);      hf.setCbPinIncorrect(f);    hf.setCbSspAuth(f);         hf.setCbLegacyAuth(f);
 ```
-
-`getState()` returns one of:
-
-| State | Meaning |
-| --- | --- |
-| `IDLE_DISCONNECTED` | No phone connected |
-| `IDLE_CONNECTED` | Phone connected, no call |
-| `INCOMING_CALL` | The phone is ringing |
-| `OUTGOING_CALL` | A call is being placed |
-| `IN_CALL` | A call is active |
-
 ## How it works
 
 You do not need this section to use the library. Read it if you are curious, or if something behaves in a way you don't expect.
@@ -958,45 +754,6 @@ flowchart TD
 
 The ESP32 announces itself as an audio device with the telephony service, which is what makes phones offer it for calls.
 
-### Connecting
-
-```mermaid
-sequenceDiagram
-    participant H as ESP32 (HF)
-    participant P as Phone (AG)
-    H->>P: Open control link
-    Note over H,P: Link is open, but not ready yet
-    H->>P: Exchange features and read current values
-    P-->>H: Call status, signal, battery, network
-    Note over H,P: Service level connection ready
-    H->>H: "Connected" callback, ask for the phone's name
-```
-
-The library says "connected" only after the last step, because commands sent earlier would fail. When the connection is lost, everything about the phone is reset: battery, signal, call state and name.
-
-### Calls and the state
-
-The phone sends two small signals about calls: *call* (is a call in progress?) and *call setup* (is a call ringing, dialing, or alerting at the other end?). `getState()` is worked out from these two:
-
-```mermaid
-stateDiagram-v2
-    [*] --> IDLE_DISCONNECTED
-    IDLE_DISCONNECTED --> IDLE_CONNECTED: phone connected and ready
-    IDLE_CONNECTED --> INCOMING_CALL: call setup = incoming
-    IDLE_CONNECTED --> OUTGOING_CALL: call setup = dialing
-    INCOMING_CALL --> IN_CALL: call = in progress
-    OUTGOING_CALL --> IN_CALL: call = in progress
-    INCOMING_CALL --> IDLE_CONNECTED: rejected or missed
-    OUTGOING_CALL --> IDLE_CONNECTED: cancelled
-    IN_CALL --> IDLE_CONNECTED: call = none
-    IN_CALL --> IDLE_DISCONNECTED: phone disconnected
-    IDLE_CONNECTED --> IDLE_DISCONNECTED: phone disconnected
-```
-
-The state does **not** use the audio link, because many phones start the audio link as soon as a call is ringing, long before you answer.
-
-When a call is ringing (or the other end is alerting), the library asks the phone for the call details. The answer holds the phone number and triggers your incoming or outgoing callback. Calls from apps arrive with a fixed placeholder number, which the library hides: you get an empty text and `simCall = false`.
-
 ### The audio link
 
 Call sound is sent as small digital frames, 16-bit mono. The phone and ESP32 agree on one of two formats when the audio link opens:
@@ -1014,10 +771,6 @@ Most modern phones pick mSBC. The library supports both and sets the speaker's s
   - *Analog microphone:* the ADC samples at 32,000 per second and the task averages groups of samples down to 16,000 or 8,000. It centers the sound (2048 of 4096) and scales it to 16 bits. It adds no gain.
   - *Mute:* replaces each frame with silence.
 
-### Volume
-
-HFP has a command to **set** the volume and a report when it changes, but no command to **ask** for it. So the library uses what the phone last reported, or what you set with `setVolume()`, and saves it in flash. After a restart it uses the saved value, or 15 if nothing was ever saved. Microphone volume reports are ignored.
-
 ### Tasks and memory
 
 | Where | What runs there |
@@ -1028,111 +781,7 @@ HFP has a command to **set** the volume and a report when it changes, but no com
 | Callback tasks | One short task for each callback, created and deleted on the fly |
 | Microphone task | Records while call audio is connected |
 
-Each callback gets its own copy of its data, deleted when the callback ends, so two events close together can't overwrite each other. The memory of Bluetooth Low Energy is given back at start-up. Pairing keys and the saved volume live in flash (NVS). A typical sketch uses about 1.1 MB of flash and 43 KB of RAM.
-
-### Source layout
-
-| File | Contents |
-| --- | --- |
-| `src/esp32_hf.hpp` | The public class. The only header users need. |
-| `src/esp32_hf_intern.hpp` | Internal state and helpers |
-| `src/esp32_hf.cpp` | `begin()`, starting and stopping Bluetooth |
-| `src/hf_gap/` | Pairing, reconnect timer, the phone's name |
-| `src/hf_app/` | Reports from the phone: connection, calls, signal, battery |
-| `src/esp32_hf_audio.cpp` | Speaker, microphone, mute, saved volume |
-| `src/esp32_hf_callback_wrapper.cpp` | Starts callback tasks |
-| `src/esp32_hf_setters.cpp`, `_getters.cpp`, `_action.cpp` | The public functions |
-| `src/main.cpp` | A hardware test sketch for developing the library. Not part of the library. |
-
-To see what the library is doing, turn on logging: add `build_flags = -DCORE_DEBUG_LEVEL=5` in PlatformIO, or choose **Tools > Core Debug Level > Verbose** in the Arduino IDE.
-
-## Troubleshooting
-
-Turn on logging first (see above) and open the Serial Monitor at 115200.
-
-<details>
-<summary><b><code>begin()</code> returns <code>false</code></b></summary>
-
-- Did you set a device name **and** a PIN before `begin()`?
-- Read the log. It names the step that failed.
-- Is the board an original ESP32? Other chips have no Bluetooth Classic.
-</details>
-
-<details>
-<summary><b>The phone can't find the ESP32</b></summary>
-
-- Let the phone scan again, and check the name matches `setDeviceName()`.
-- Turn the phone's Bluetooth off and on. Some phones cache old data.
-</details>
-
-<details>
-<summary><b>Pairing fails</b></summary>
-
-- Remove the old pairing in the phone's Bluetooth settings and try again. This fixes most cases.
-- If the phone asks for a PIN, use the one you set (1 to 16 characters).
-- Try `hf.setSecurePairing(false)` to force PIN pairing, or leave it on to use the code.
-- Use `setCbPinIncorrect()` to be told when pairing fails.
-</details>
-
-<details>
-<summary><b>Paired, but no callbacks fire</b></summary>
-
-- In the phone's Bluetooth settings, open the options for the ESP32 and make sure **Phone calls** (or "Call audio") is switched on.
-- Check that `isConnected()` is `true`.
-</details>
-
-<details>
-<summary><b>It doesn't reconnect after a restart</b></summary>
-
-- The pairing must exist on **both** sides. If you deleted it on the phone, pair again.
-- Wait up to 5 seconds per paired phone. Several paired phones take turns.
-- *Untested:* reconnecting is new and has not been tried on hardware yet.
-</details>
-
-<details>
-<summary><b>I hear nothing from the speaker</b></summary>
-
-- Does `setupSpeaker()` return a valid pointer? Check the Serial Monitor.
-- Check wiring: BCLK, LRC/WS, DIN, and the amplifier's power.
-- Is the volume 0? Check `hf.getVolume()`.
-- Is the call sound on the ESP32? Look for the "audio connected" callback, or call `connectAudio()`. Some phones keep the sound on the phone.
-</details>
-
-<details>
-<summary><b>The other person can't hear me</b></summary>
-
-- Did you call `setMicrophoneAdcPin()` or `setMicrophoneI2s()` before `begin()`?
-- Is mute on? Call `hf.setMicMute(false)`.
-- *Analog microphone:* is the board amplified, does its output rest near half the supply voltage, and is the pin an ADC1 pin (GPIO 32 to 39)?
-- *I2S microphone:* check SCK, WS and SD. Try L/R to GND, then to 3.3 V.
-- Is the call sound on the ESP32? A call on the phone's own earpiece doesn't use the ESP32's microphone.
-</details>
-
-<details>
-<summary><b>The sound is quiet or noisy</b></summary>
-
-- Analog input is noisy by nature. An I2S microphone is cleaner.
-- The library adds no microphone gain. Use a microphone board with an amplifier.
-- Keep microphone wires short and away from the speaker wires.
-</details>
-
-<details>
-<summary><b>The ESP32 resets during a call or at high volume</b></summary>
-
-The amplifier draws too much current. Give it better power or add a capacitor.
-</details>
-
-<details>
-<summary><b>"Microphone capture uses I2S0" error</b></summary>
-
-A microphone is set and the speaker uses I2S port 0. Use port 1 for the speaker. `setupSpeaker()` already does.
-</details>
-
-<details>
-<summary><b>My callback crashes the ESP32</b></summary>
-
-Callbacks have about 4 KB of stack. Don't use large arrays or heavy functions in them, and see [Callbacks: what you must know](#callbacks-what-you-must-know).
-</details>
+Each callback gets its own copy of its data, deleted when the callback ends, so two events close together can't overwrite each other. The memory of Bluetooth Low Energy is given back at start-up. Pairing keys and the saved volume live in flash (NVS). A typical sketch uses about 1.1 MB of flash and 43 KB of RAM. (NEEDS MORE TESTING)
 
 ## Limitations and status
 
