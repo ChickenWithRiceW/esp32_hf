@@ -22,8 +22,6 @@ This is the complete reference for **ESP32 HFP**. For an introduction, wiring an
 ## Conventions
 
 - Almost every function returns `bool`. `true` means success. `false` means it failed, and a message in the log says why.
-- **"Before `begin()`"** means the function returns `false` (and logs an error) once `begin()` has succeeded.
-- **"After `begin()`"** means the function returns `false` (and logs an error) until `begin()` has succeeded.
 - Strings you pass in are **copied**. They may go out of scope afterwards.
 - Functions marked *Untested* work as designed in the code but have not been tried on real hardware yet.
 
@@ -158,7 +156,7 @@ Sets up a speaker on **I2S port 1** and starts it: standard I2S, 16-bit, mono, 1
 | `din` | Data in pin, `-1` if not used |
 | `mclk` | Master clock pin, `-1` if not used |
 
-**Returns** the I2S object, or `nullptr` if the speaker could not start (or `begin()` was already called). You normally do not need the returned object. Call it once.
+**Returns** the I2S object, or `nullptr` if the speaker could not start (or `begin()` was already called). You normally do not need the returned object (Could use it for own audio functions tho). Call it once.
 
 ```cpp
 if (!hf.setupSpeaker(5, 25, 26))
