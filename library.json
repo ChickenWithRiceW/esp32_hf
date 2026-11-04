@@ -5,11 +5,11 @@
   "keywords": "esp32, bluetooth, hfp, hands-free, phone, i2s",
   "repository": {
     "type": "git",
-    "url": "TODO: repository URL"
+    "url": "https://github.com/ChickenWithRiceW/esp32_hf.git"
   },
   "authors": [
     {
-      "name": "TODO: author name"
+      "name": "ChickenWithRiceW"
     }
   ],
   "license": "MIT",
