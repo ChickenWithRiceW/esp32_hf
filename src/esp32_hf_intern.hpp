@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ESP32_HF_INTERN_HPP
+#define ESP32_HF_INTERN_HPP
 
 // Internal header: shared state and helpers for the library sources. Not part of the public API.
 
@@ -216,3 +217,4 @@ struct EspHf::Impl {
     static void call_wrap(void* ptr);     // Call callback. Frees the t_call.
     static void ssp_auth_wrap(void* ptr); // Pairing code callback. Frees the t_auth.
 };
+#endif

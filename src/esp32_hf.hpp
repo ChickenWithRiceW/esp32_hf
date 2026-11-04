@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ESP32_HF_HPP
+#define ESP32_HF_HPP
 
 #include <ESP_I2S.h>
 #include <memory>
@@ -269,3 +270,4 @@ private:
     struct Impl;
     std::unique_ptr<Impl> _impl;
 };
+#endif
