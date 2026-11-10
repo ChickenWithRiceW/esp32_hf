@@ -23,11 +23,11 @@
 
 /** Overall state of the hands-free connection. */
 enum e_state {
-    IDLE_DISCONNECTED = 0, ///< No phone connected.
-    IDLE_CONNECTED,        ///< Phone connected, no call.
-    IN_CALL,               ///< A call is active.
-    INCOMING_CALL,         ///< Phone is ringing.
-    OUTGOING_CALL,         ///< A call is being placed.
+    IDLE_DISCONNECTED = 0,  // No phone connected.
+    IDLE_CONNECTED,         // Phone connected, no call.
+    IN_CALL,                // A call is active.
+    INCOMING_CALL,          // Phone is ringing.
+    OUTGOING_CALL,          // A call is being placed.
 };
 
 class EspHf {

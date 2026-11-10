@@ -72,7 +72,8 @@ void EspHf::Impl::auth_success_check(esp_bt_gap_cb_param_t* param)
         snprintf(_info.device_name, sizeof(_info.device_name), "%s", (char*)param->auth_cmpl.device_name);
         if (callbacks.cb_bt_pin_correct)
             run_cb(callbacks.cb_bt_pin_correct);
-    } else {
+    }
+    else {
         ESP_LOGE(BT_HF_TAG, "authentication failed, status: %d",
             param->auth_cmpl.stat);
         _info.device_name[0] = '\0';

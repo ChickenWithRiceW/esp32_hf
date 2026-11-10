@@ -73,7 +73,8 @@ void EspHf::Impl::connection_change(const esp_hf_client_cb_param_t* param)
         update_state();
         esp_bt_gap_read_remote_name(peer_addr);
         run_cb(callbacks.cb_bt_connected);
-    } else if (state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
+    }
+    else if (state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
         // Also happens when a connection attempt fails. Forget everything about the phone.
         const bool was_connected = _info.connected;
         _info.connected = false;
@@ -119,7 +120,8 @@ void EspHf::Impl::call_event(char* phone_number, esp_hf_current_call_direction_t
 
     if (dir == ESP_HF_CURRENT_CALL_DIRECTION_INCOMING || incoming_call) {
         call(phone_number, has_phone_number, callbacks.cb_incoming_call);
-    } else {
+    }
+    else {
         call(phone_number, has_phone_number, callbacks.cb_outgoing_call);
     }
     incoming_call = false;
@@ -209,7 +211,7 @@ void EspHf::Impl::bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_cli
             (param->ccwa.number == NULL) ? "NULL" : (param->ccwa.number));
         break;
     }
-        // TODO: End of not tested cases.
+    // TODO: End of not tested cases.
 
     case ESP_HF_CLIENT_VOLUME_CONTROL_EVT:
         // Only the speaker volume matters here, ignore microphone volume changes.

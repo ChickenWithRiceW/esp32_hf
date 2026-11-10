@@ -205,7 +205,8 @@ bool EspHf::Impl::start_microphone(uint32_t sample_rate)
         mic.i2s = &microphone.i2s;
         mic.i2s->setPins(microphone.bclk, microphone.ws, -1, microphone.din, microphone.mclk);
         err = mic.i2s->begin(I2S_MODE_STD, sample_rate, I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_MONO) ? ESP_OK : ESP_FAIL;
-    } else {
+    }
+    else {
         err = start_adc_microphone(microphone.adc_pin);
     }
     if (err != ESP_OK) {
@@ -223,7 +224,6 @@ bool EspHf::Impl::start_microphone(uint32_t sample_rate)
     }
     return true;
 }
-
 
 // Called by the Bluetooth stack with audio from the phone. Applies the volume and plays it.
 void EspHf::Impl::bt_app_hf_client_incoming_cb(const uint8_t* buf, uint32_t sz)
@@ -250,7 +250,6 @@ void EspHf::Impl::bt_app_hf_client_incoming_cb_wrapper(const uint8_t* buf, uint3
     getInstance()._impl->bt_app_hf_client_incoming_cb(buf, sz);
 }
 
-
 void EspHf::Impl::audio_change(esp_hf_client_cb_param_t* param)
 {
     const auto audio_state = param->audio_stat.state;
@@ -271,7 +270,8 @@ void EspHf::Impl::audio_change(esp_hf_client_cb_param_t* param)
             audio_active = true;
             run_cb(callbacks.cb_audio_connected);
         }
-    } else if (audio_state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
+    }
+    else if (audio_state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
         audio_stopped();
     }
 }
@@ -291,7 +291,6 @@ void EspHf::Impl::set_mic_mute(bool mute)
 {
     mic.muted = mute;
 }
-
 
 static constexpr const char* VOLUME_NVS_NAMESPACE = "esp32_hf";
 static constexpr const char* VOLUME_NVS_KEY = "volume";
