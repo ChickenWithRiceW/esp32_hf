@@ -793,7 +793,8 @@ Each callback gets its own copy of its data, deleted when the callback ends, so 
 - **Calls only.** No music (A2DP).
 - **No raw AT commands.** The ESP32's Bluetooth code only allows its own command functions. The common ones are available as functions.
 - **No DTMF tones, no call waiting or hold control.**
-- **Phone numbers** longer than 19 characters are cut off.
+- **Phone numbers** can have up to 15 digits (plus a leading `+`). Longer numbers are cut off.
+- **Calls that don't come over the SIM card** (for example Signal) are not handled correctly yet. The call direction and state are not reliable for them.
 - **Pairing is open.** Any phone in range can pair. There is no pairing button.
 - **No microphone gain.** The microphone must give a good signal.
 - **Settings are fixed after `begin()`.** Name, PIN and audio can't be changed without a restart.
